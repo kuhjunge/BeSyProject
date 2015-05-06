@@ -18,3 +18,4 @@ typedef signed long			int32_t;
 
 
 #endif  /* __TYPES__ */ 
+/* TEST NEU 2 */
