@@ -9,10 +9,10 @@
 
 // globale Defines, die die physikalische Struktur des Flash parametrieren
 #define PARTITION_COUNT	1	// Anzahl der Partitionen, nur eine Unterstützt
-#define BLOCK_COUNT 4		// Anzahl der Blöcke 
-#define PAGES_PER_BLOCK 2	// Anzahl der Pages in einem Block 
-#define PAGE_DATASIZE 8		// Größe des Datenbereichs einer Page in Byte
-#define PAGE_SPARESIZE 4	// Größe des Reserevebereichs einer Page in Byte 
+#define BLOCK_COUNT 32		// Anzahl der Blöcke 
+#define PAGES_PER_BLOCK 4	// Anzahl der Pages in einem Block 
+#define PAGE_DATASIZE 64		// Größe des Datenbereichs einer Page in Byte
+#define PAGE_SPARESIZE 64	// Größe des Reserevebereichs einer Page in Byte 
 
 #define FLASH_INITIALISED 0xA2		// indicates an initialised flash memory hardware
 #define STATEBLOCKSIZE 512			// Größe der Datenblöcke in denen der Zustand bei unmount gespeichert wird

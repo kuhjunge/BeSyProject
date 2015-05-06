@@ -18,5 +18,3 @@ typedef signed long			int32_t;
 
 
 #endif  /* __TYPES__ */ 
-
-/*Test Kommentar um zu testen ob alles funktioniert*/
