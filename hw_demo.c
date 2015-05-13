@@ -5,7 +5,7 @@ uint8_t myState[2*STATEBLOCKSIZE], *statePtr;
 uint8_t myData[16], *dataPtr, myReadData[16];
 uint16_t count; 
 
-int main(int argc, char *argv[]) {
+int main_alt(int argc, char *argv[]) {
 	uint16_t i,size; 
 	// Flash Initialisieren 
 	FL_resetFlash(); 

@@ -21,12 +21,21 @@
     <ClCompile Include="hw_demo.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="ftl.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="main.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="flashhardware.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="types.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="ftl.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
