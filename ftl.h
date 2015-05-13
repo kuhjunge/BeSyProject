@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "flashhardware.h"
 
-#define LOGICAL_BLOCK_DATASIZE 64	// Logische Blockgröße des OS
+#define LOGICAL_BLOCK_DATASIZE 16	// Logische Blockgröße des OS
 
 /* Zustände für die physikalische Liste							*/
 /* assigned =  Speicherzelle benutzt						*/

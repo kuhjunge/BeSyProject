@@ -60,22 +60,23 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		target = flashDevice->mappingTable[i];
 		i++;
 	}
-	block = target / BLOCK_COUNT;
-	page = target % BLOCK_COUNT;
-	bp_index = (target % BLOCK_COUNT) % PAGES_PER_BLOCK;
-	return FL_readData(block, page, bp_index, LOGICAL_BLOCK_DATASIZE, &flashDevice->flashHardware); // ToDo
+	i--;
+	block = i / BLOCK_COUNT;
+	page = (i % BLOCK_COUNT) / PAGES_PER_BLOCK;
+	bp_index = (i % BLOCK_COUNT) % PAGES_PER_BLOCK;
+	return FL_readData(block, page, bp_index, LOGICAL_BLOCK_DATASIZE, data); // ToDo
 }
 
 uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	
 	int block = flashDevice->activeBlockPosition / BLOCK_COUNT; 
-	int page = flashDevice->activeBlockPosition % BLOCK_COUNT;
+	int page = (flashDevice->activeBlockPosition % BLOCK_COUNT) / PAGES_PER_BLOCK;
 	int bp_index = (flashDevice->activeBlockPosition % BLOCK_COUNT) % PAGES_PER_BLOCK;
 	int count;
-	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, &flashDevice->flashHardware);
+	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data);
 	if (count == LOGICAL_BLOCK_DATASIZE){
-		flashDevice->mappingTable[index] = flashDevice->activeBlockPosition;
-		if (index < LOGICAL_BLOCK_DATASIZE){
+		flashDevice->mappingTable[flashDevice->activeBlockPosition] = index;
+		if (bp_index + 1 < LOGICAL_BLOCK_DATASIZE){
 			flashDevice->activeBlockPosition++;
 		}
 		else {
@@ -85,5 +86,6 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	}
 	else {
 		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben", count, LOGICAL_BLOCK_DATASIZE);
+		return FALSE;
 	}
 }
