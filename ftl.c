@@ -4,12 +4,22 @@
 flash_t flashDevice;
 // Funktionen Allocator
 
-
+int setFreeBlock(flash_t *flashDevice){
+	int i = 0;
+	while (flashDevice->blockArray[i].status != ready)
+	{
+		i++;
+	}
+	flashDevice->activeBlockPosition = i * BLOCK_COUNT;
+	flashDevice->freeBlocks--;
+}
 
 // Funktionen Cleaner
 // Nichts zu tun ? 
 
 // Funktionen Wear-Leveler ([TC11]- Algorithmus)
+
+// Hilfs Funktionen FLT
 
 // Funktionen FLT
 flash_t *mount(flashMem_t *flashHardware){
@@ -29,8 +39,9 @@ flash_t *mount(flashMem_t *flashHardware){
 	for (i = 0; i < BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE); i++){
 		flashDevice.mappingTable[i] = 0;
 	}
-	flashDevice.activeBlockPosition = 32;
+	flashDevice.activeBlockPosition = 0;
 	flashDevice.invalidCounter = 0;
+	flashDevice.freeBlocks = BLOCK_COUNT;
 	//uint8_t *FL_restoreState(unit8_t *state)
 
 	//ToDo: Datenstruktur laden
@@ -74,13 +85,24 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	int bp_index = (flashDevice->activeBlockPosition % BLOCK_COUNT) % PAGES_PER_BLOCK;
 	int count;
 	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data);
+	flashDevice->blockArray[block].BlockStatus[flashDevice->activeBlockPosition % BLOCK_COUNT] = assigned;
 	if (count == LOGICAL_BLOCK_DATASIZE){
 		flashDevice->mappingTable[flashDevice->activeBlockPosition] = index;
-		if (bp_index + 1 < LOGICAL_BLOCK_DATASIZE){
+			
+		if (page  * (bp_index + 1) < ((PAGES_PER_BLOCK -1 )* (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE) -1)){
 			flashDevice->activeBlockPosition++;
 		}
 		else {
-			// ToDo: Wähle neuen Block aus der Blockliste und passe "activeBlockPosition" an
+			flashDevice->blockArray[block].status = used;
+			if (flashDevice->freeBlocks < 2){
+				// ToDo: Clean
+
+			}
+			setFreeBlock(flashDevice);
+			if (flashDevice->freeBlocks < 1) {
+				printf("Fehler Festplatte zu voll!");
+				return FALSE;
+			}
 		}
 		return TRUE;
 	}

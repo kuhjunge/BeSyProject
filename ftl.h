@@ -15,7 +15,7 @@
 /* invalid =  Speicherzelle nicht meht gültig						*/
 typedef enum
 {
-	assigned, unused, invalid
+	assigned, unused, invalid // evtl ein "inProgress" verwenden ?
 
 } StatusPageElem_t;
 
@@ -43,6 +43,7 @@ typedef struct flash_struct
 	int activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
 	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
 	int isFehler; // Information für Unmount um Fehler zurück zu geben
+	int freeBlocks;
 } flash_t;
 
 // Funktionen der Aufgabenstellung
