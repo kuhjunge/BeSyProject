@@ -12,13 +12,14 @@
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS ) +1
 #define CLEAN_BLOCK_COUNT 3
 #define START_CLEANING 3
+#define SPARE_BLOCKS 1
 /* Zustände für die physikalische Liste							*/
 /* assigned =  Speicherzelle benutzt						*/
 /* unused =  Speicherzelle beschreibbar						*/
 /* invalid =  Speicherzelle nicht meht gültig						*/
 typedef enum
 {
-	assigned, unused, invalid // evtl ein "inProgress" verwenden ?
+	unused, assigned, invalid // evtl ein "inProgress" verwenden ?
 
 } StatusPageElem_t;
 

@@ -17,25 +17,26 @@ void cleaner(flash_t *flashDevice){
 
 	while (i < BLOCK_COUNT && loeschcount < CLEAN_BLOCK_COUNT){
 		i++;
-		if (flashDevice->blockArray[i].invalidCounter >= schwellwert){
+		if (flashDevice->blockArray[i].invalidCounter >= schwellwert && flashDevice->blockArray[i].status == used){ // Wenn Block über Schwellwert liegt und benutzt wird
 			for (j = 0; j < BLOCKSEGMENTS; j++){
 
 				if (flashDevice->blockArray[i].BlockStatus[j] != invalid){
 					adress = flashDevice->mappingTable[(i * BLOCKSEGMENTS) + j ];
 					count = FL_readData(i, j / PAGES_PER_BLOCK, j % PAGES_PER_BLOCK * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, &temp);
 					count = writeBlock(flashDevice, adress, &temp);
+					flashDevice->invalidCounter--;
+					//flashDevice->blockArray[i].invalidCounter--;
 				}
 				flashDevice->blockArray[i].BlockStatus[j] = unused; // Segemente auf unused setzen
 			}
-			if (FL_deleteBlock(i) == TRUE){
+			if (FL_deleteBlock(i) == TRUE){ // Wenn erfolgreich gelöscht
 				flashDevice->blockArray[i].loeschzaehler++; // block löschzähler hochsetzten
-				flashDevice->invalidCounter = flashDevice->invalidCounter - flashDevice->blockArray[i].invalidCounter; // Ges Counter zurück setzen
 				flashDevice->blockArray[i].invalidCounter = 0; // Counter zurück setzen
 				flashDevice->blockArray[i].status = ready; // Status auf Ready setzen
 				flashDevice->freeBlocks++;
 				loeschcount++;
 			}
-			else {
+			else { // wenn nicht erfolgreich gelöscht
 				printf("Bad Block!\n"); // badBlock
 				flashDevice->blockArray[i].status = badBlock;
 			}
@@ -48,9 +49,54 @@ void cleaner(flash_t *flashDevice){
 
 // Hilfs Funktionen FLT
 
+void printerr(flash_t *flashDevice){
+	int i, j, invCo = 0, loesch = 0;
+	int block = flashDevice->activeBlockPosition / BLOCK_COUNT;
+	int segment = (flashDevice->activeBlockPosition % BLOCK_COUNT);
+	char marker;
+	printf("Fehleranalyse!\n");
+	printf("Freie Blocks: %i\nInvalide Segmente: %i\nAktuelle Schreibposition: %i\n\n"
+		, flashDevice->freeBlocks, flashDevice->invalidCounter, flashDevice->activeBlockPosition);
+	printf("Block | Status | Invalide Segmente | Loeschanzahl\n");
+	for (i = 0; i < BLOCK_COUNT; i++)
+	{
+		printf("   %02i |   %i    |         %02i        |     %i\n", i
+			, flashDevice->blockArray[i].status, flashDevice->blockArray[i].invalidCounter, flashDevice->blockArray[i].loeschzaehler);
+		invCo = invCo + flashDevice->blockArray[i].invalidCounter;
+		loesch = loesch + flashDevice->blockArray[i].loeschzaehler;
+	}
+	printf("      |Free:%02i |        %04i       |     %i\n", flashDevice->freeBlocks, invCo, loesch);
+	printf("Block: ready (0) / used (1) / badBlock (2) \n");
+	printf("Block fuer Block Detailanalyse!\n");
+	getchar();
+	for (i = 0; i < BLOCK_COUNT; i++)
+	{
+		printf("\nBlock %02i:\n", i);
+		if (flashDevice->blockArray[i].status == ready){
+			printf("Status Ready\n");
+		}
+		else if (flashDevice->blockArray[i].status == used){
+			printf("Status Used\n");
+		}
+		else{
+			printf("Status Invalid\n");
+		}
+			printf("Invalide Segmente: %i\n  Loeschanzahl: %i\nBlock: ready (0) / used (1) / badBlock (2) \n\n", flashDevice->blockArray[i].invalidCounter, flashDevice->blockArray[i].loeschzaehler);
+		for (j = 0; j < BLOCKSEGMENTS; j++){
+			marker = ' ';
+			if (block == i && segment == j){marker = '!';}
+			printf("Segment %02i: Table: %03i - %i %c\n", j, flashDevice->mappingTable[(i *BLOCKSEGMENTS) + j + 1], flashDevice->blockArray[i].BlockStatus[j], marker);
+		}
+		printf("Segment: unused (0) / assigned (1) / invalid (2)\n");
+		getchar();
+
+	}
+
+}
+
 int setFreeBlock(flash_t *flashDevice){
 	int i = 0;
-	while (flashDevice->blockArray[i].status != ready)
+	while (flashDevice->blockArray[i].status != ready && i < BLOCK_COUNT)
 	{
 		i++;
 	}
@@ -149,6 +195,7 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	int count;
 	if (flashDevice->blockArray[block].status != ready){
 		printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff!\n");
+		printerr(flashDevice);
 		return FALSE;
 	}
 	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
@@ -169,11 +216,11 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	else { // oder einen neuen Block auswählen
 		flashDevice->blockArray[block].status = used;  // alten Block abschließen
 		setFreeBlock(flashDevice); // Freien Block finden und nutzen
-		if (flashDevice->freeBlocks < START_CLEANING){ // Cleaner
+		if (flashDevice->freeBlocks < START_CLEANING + SPARE_BLOCKS){ // Cleaner
 			// ToDo: Clean
 			cleaner(flashDevice);
 		}
-		if (flashDevice->freeBlocks < 1) { // Fehler falls zu wenig freie Blöcke da sind
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS) { // Fehler falls zu wenig freie Blöcke da sind
 			printf("Fehler Festplatte zu voll!\n");
 			return FALSE;
 		}

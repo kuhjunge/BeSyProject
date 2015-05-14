@@ -40,6 +40,6 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Unmount\n");
 	//unmount(&myData);
-
+	printerr(ssd);
 	printf("Test Ende");
 }
