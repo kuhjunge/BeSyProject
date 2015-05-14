@@ -10,7 +10,6 @@
 #define LOGICAL_BLOCK_DATASIZE 16	// Logische Blockgröße des OS
 #define BLOCKSEGMENTS 16 // Speichersegmente pro Block
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS ) +1
-#define CLEAN_BLOCK_COUNT 3
 #define START_CLEANING 3
 #define SPARE_BLOCKS 1
 /* Zustände für die physikalische Liste							*/

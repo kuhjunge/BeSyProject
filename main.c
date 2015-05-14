@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
 
-	for (j = 0; j < 1024; j++){
-		r = 1 + rand() % 511;
+	for (j = 0; j < 1024; j++){ // Bug: bei 2048 kommt es zu Zugriffs und Schreibfehlern
+		r = 1 + rand() % 495;
 		printf("Write\n");
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);
