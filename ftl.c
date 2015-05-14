@@ -134,7 +134,7 @@ void invalidationOfOldIndex(flash_t *flashDevice, uint32_t index){ // ToDo: Prüf
 		int i = BLOCKSEGMENTS;
 		int old_block = oldDataIndex / i;
 		
-		flashDevice->mappingTable[oldDataIndex] = 0;
+		flashDevice->mappingTable[oldDataIndex+1] = 0;
 		flashDevice->blockArray[old_block].BlockStatus[oldDataIndex - (old_block * i)] = invalid;
 		flashDevice->invalidCounter++;
 		flashDevice->blockArray[old_block].invalidCounter++;
@@ -185,7 +185,7 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	int block;
 	int page;
 	int bp_index;
-	int i = mapping(flashDevice, index); // Mapping
+	int i = mapping(flashDevice, index) -1; // Mapping
 	block = i / BLOCKSEGMENTS;
 	page = (i % BLOCKSEGMENTS) / PAGES_PER_BLOCK;
 	bp_index = (i % BLOCKSEGMENTS) % PAGES_PER_BLOCK;
@@ -212,7 +212,7 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	
 	invalidationOfOldIndex(flashDevice, index); // Alten Eintrag in Mapping Table und Block invalidieren
 
-	flashDevice->mappingTable[(block * BLOCKSEGMENTS) + (page * PAGES_PER_BLOCK) + bp_index] = index + 1; // Mapping erzeugen nachdem das alte Mapping invalidiert wurde
+	flashDevice->mappingTable[(block * BLOCKSEGMENTS) + (page * PAGES_PER_BLOCK) + bp_index+1] = index + 1; // Mapping erzeugen nachdem das alte Mapping invalidiert wurde
 
 	// Auswahl des nächsten Schreibortes
 	if (page  * (bp_index + 1) < ((PAGES_PER_BLOCK - 1)* (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE) - 1)){ // position weiterzählen wenn innerhalb des selben blockes

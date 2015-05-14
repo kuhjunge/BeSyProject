@@ -32,6 +32,10 @@ int main(int argc, char *argv[]) {
 
 		printf("Read\n");
 		readBlock(ssd, r, &myRetData);
+		if (myRetData[0] != 'A'){
+			printf("Lesefehler\n\n");
+			printerr(ssd);
+		}
 		for (i = 0; i < 16; i++)
 		{
 			printf("%c", myRetData[i]);
