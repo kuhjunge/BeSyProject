@@ -1,5 +1,6 @@
 // Test ausführung
 #include "ftl.h"
+#include <time.h>
 
 flash_t* ssd;
 flashMem_t flMe;
@@ -13,20 +14,25 @@ uint16_t count;
 int main(int argc, char *argv[]) {
 	int i;
 	int j;
-	printf("Mount\n");
+	int r;
+
+	srand(time(NULL));
+
+	printf("Mount %i \n", MAPPING_TABLE_SIZE);
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
 
 	for (j = 0; j < 512; j++){
+		r = rand() % 512;
 		printf("Write\n");
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);
 
-		writeBlock(ssd, j, &myData);
+		writeBlock(ssd, r, &myData);
 
 		printf("Read\n");
-		readBlock(ssd, j, &myRetData);
-		for (i = 0; i < 4; i++)
+		readBlock(ssd, r, &myRetData);
+		for (i = 0; i < 16; i++)
 		{
 			printf("%c", myRetData[i]);
 		}
@@ -34,7 +40,6 @@ int main(int argc, char *argv[]) {
 	}
 	printf("Unmount\n");
 	//unmount(&myData);
-
 
 	printf("Test Ende");
 }
