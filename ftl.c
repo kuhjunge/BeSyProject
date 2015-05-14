@@ -6,6 +6,43 @@ flash_t flashDevice;
 
 // Funktionen Cleaner
 // Nichts zu tun ? 
+void cleaner(flash_t *flashDevice){
+	int i = -1;
+	int j;
+	int loeschcount = 0;
+	int schwellwert = flashDevice->invalidCounter / BLOCK_COUNT;
+	uint8_t count;
+	uint32_t adress;
+	uint8_t temp[16];
+
+	while (i < BLOCK_COUNT && loeschcount < CLEAN_BLOCK_COUNT){
+		i++;
+		if (flashDevice->blockArray[i].invalidCounter >= schwellwert){
+			for (j = 0; j < BLOCKSEGMENTS; j++){
+
+				if (flashDevice->blockArray[i].BlockStatus[j] != invalid){
+					adress = flashDevice->mappingTable[(i * BLOCKSEGMENTS) + j ];
+					count = FL_readData(i, j / PAGES_PER_BLOCK, j % PAGES_PER_BLOCK * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, &temp);
+					count = writeBlock(flashDevice, adress, &temp);
+				}
+				flashDevice->blockArray[i].BlockStatus[j] = unused; // Segemente auf unused setzen
+			}
+			if (FL_deleteBlock(i) == TRUE){
+				flashDevice->blockArray[i].loeschzaehler++; // block löschzähler hochsetzten
+				flashDevice->invalidCounter = flashDevice->invalidCounter - flashDevice->blockArray[i].invalidCounter; // Ges Counter zurück setzen
+				flashDevice->blockArray[i].invalidCounter = 0; // Counter zurück setzen
+				flashDevice->blockArray[i].status = ready; // Status auf Ready setzen
+				flashDevice->freeBlocks++;
+				loeschcount++;
+			}
+			else {
+				printf("Bad Block!\n"); // badBlock
+				flashDevice->blockArray[i].status = badBlock;
+			}
+		}
+
+	}
+}
 
 // Funktionen Wear-Leveler ([TC11]- Algorithmus)
 
@@ -30,8 +67,8 @@ int mapping(flash_t *flashDevice, uint32_t index){
 		i++;
 		target = flashDevice->mappingTable[i];
 	} while (target != (index +1)&& i < x);
-	if (i >= MAPPING_TABLE_SIZE){
-		i = 0;
+	if (i+1 >= x){
+		i = -1;
 	}
 	/*
 	Algorihtmus nicht so effizient wie HashMap, aber akutell keine Idee wie ich eine Hashmap für uint32_t in C implementiere
@@ -110,37 +147,39 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	int page = (flashDevice->activeBlockPosition % BLOCK_COUNT) / PAGES_PER_BLOCK;
 	int bp_index = (flashDevice->activeBlockPosition % BLOCK_COUNT) % PAGES_PER_BLOCK;
 	int count;
-	if (flashDevice->blockArray[block].status == ready){
-		count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
-		flashDevice->blockArray[block].BlockStatus[flashDevice->activeBlockPosition % BLOCK_COUNT] = assigned; // Beschriebenes Segement merken
-		if (count == LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten geschrieben wurden
-			invalidationOfOldIndex(flashDevice, index); // Alten Eintrag in Mapping Table und Block invalidieren
-			flashDevice->mappingTable[(block * BLOCKSEGMENTS) + (page * PAGES_PER_BLOCK) + bp_index] = index + 1; // Mapping erzeugen
-			// 
-			if (page  * (bp_index + 1) < ((PAGES_PER_BLOCK - 1)* (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE) - 1)){ // position weiterzählen wenn innerhalb des selben blockes
-				flashDevice->activeBlockPosition++;
-			}
-			else { // oder einen neuen Block auswählen
-				flashDevice->blockArray[block].status = used;  // alten Block abschließen
-				if (flashDevice->freeBlocks < 2){ // Cleaner
-					// ToDo: Clean
+	if (flashDevice->blockArray[block].status != ready){
+		printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff!\n");
+		return FALSE;
+	}
+	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
+	if (count != LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten geschrieben wurden		}
+		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);
+		return FALSE;
+	}
+	flashDevice->blockArray[block].BlockStatus[flashDevice->activeBlockPosition % BLOCK_COUNT] = assigned; // Beschriebenes Segement merken
+	
+	invalidationOfOldIndex(flashDevice, index); // Alten Eintrag in Mapping Table und Block invalidieren
 
-				}
-				setFreeBlock(flashDevice); // Freien Block finden und nutzen
-				if (flashDevice->freeBlocks < 1) { // Fehler falls zu wenig freie Blöcke da sind
-					printf("Fehler Festplatte zu voll!\n");
-					return FALSE;
-				}
-			}
-			return TRUE;
+	flashDevice->mappingTable[(block * BLOCKSEGMENTS) + (page * PAGES_PER_BLOCK) + bp_index] = index + 1; // Mapping erzeugen nachdem das alte Mapping invalidiert wurde
+
+	// Auswahl des nächsten Schreibortes
+	if (page  * (bp_index + 1) < ((PAGES_PER_BLOCK - 1)* (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE) - 1)){ // position weiterzählen wenn innerhalb des selben blockes
+		flashDevice->activeBlockPosition++;
+	}
+	else { // oder einen neuen Block auswählen
+		flashDevice->blockArray[block].status = used;  // alten Block abschließen
+		setFreeBlock(flashDevice); // Freien Block finden und nutzen
+		if (flashDevice->freeBlocks < START_CLEANING){ // Cleaner
+			// ToDo: Clean
+			cleaner(flashDevice);
 		}
-		else {
-			printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);
+		if (flashDevice->freeBlocks < 1) { // Fehler falls zu wenig freie Blöcke da sind
+			printf("Fehler Festplatte zu voll!\n");
 			return FALSE;
 		}
 	}
-	else {
-		printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff!\n", count, LOGICAL_BLOCK_DATASIZE);
-		return FALSE;
-	}
+	return TRUE;
+
+	
+
 }
