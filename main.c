@@ -22,8 +22,8 @@ int main(int argc, char *argv[]) {
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
 
-	for (j = 0; j < 512; j++){
-		r = rand() % 512;
+	for (j = 0; j < 1024; j++){
+		r = 1 + rand() % 511;
 		printf("Write\n");
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);

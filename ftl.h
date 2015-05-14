@@ -59,5 +59,7 @@ flash_t *unmount(flash_t *flashDevice);
 uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data);
 
 uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
+
+void printerr(flash_t *flashDevice);
 #endif  /* __FTL__ */ 
 
