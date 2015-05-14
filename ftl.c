@@ -54,6 +54,7 @@ void printerr(flash_t *flashDevice){
 	int block = flashDevice->activeBlockPosition / BLOCK_COUNT;
 	int segment = (flashDevice->activeBlockPosition % BLOCK_COUNT);
 	char marker;
+	char fehler;
 	printf("Fehleranalyse!\n");
 	printf("Freie Blocks: %i\nInvalide Segmente: %i\nAktuelle Schreibposition: %i\n\n"
 		, flashDevice->freeBlocks, flashDevice->invalidCounter, flashDevice->activeBlockPosition);
@@ -73,19 +74,23 @@ void printerr(flash_t *flashDevice){
 	{
 		printf("\nBlock %02i:\n", i);
 		if (flashDevice->blockArray[i].status == ready){
-			printf("Status Ready\n");
+			printf(" Status: Ready (0)\n");
 		}
 		else if (flashDevice->blockArray[i].status == used){
-			printf("Status Used\n");
+			printf(" Status. Used (1)\n");
 		}
 		else{
-			printf("Status Invalid\n");
+			printf(" Status: Invalid (2)\n");
 		}
-			printf("Invalide Segmente: %i\n  Loeschanzahl: %i\nBlock: ready (0) / used (1) / badBlock (2) \n\n", flashDevice->blockArray[i].invalidCounter, flashDevice->blockArray[i].loeschzaehler);
+			printf(" Invalide Segmente: %i\n Loeschanzahl: %i\n\n", flashDevice->blockArray[i].invalidCounter, flashDevice->blockArray[i].loeschzaehler);
 		for (j = 0; j < BLOCKSEGMENTS; j++){
 			marker = ' ';
-			if (block == i && segment == j){marker = '!';}
-			printf("Segment %02i: Table: %03i - %i %c\n", j, flashDevice->mappingTable[(i *BLOCKSEGMENTS) + j + 1], flashDevice->blockArray[i].BlockStatus[j], marker);
+			fehler = ' ';
+			if (block == i && segment == j){marker = 'S';}
+			if (flashDevice->blockArray[i].BlockStatus[j] != assigned && flashDevice->mappingTable[(i *BLOCKSEGMENTS) + j + 1] != 0){ fehler = '!'; }
+			if (flashDevice->blockArray[i].BlockStatus[j] == assigned && flashDevice->mappingTable[(i *BLOCKSEGMENTS) + j + 1] == 0){ fehler = '!'; }
+			if (flashDevice->blockArray[i].BlockStatus[j] > 2 ){ fehler = '?'; }
+			printf("Segment %02i: Table: %03i - %i %c %c\n", j, flashDevice->mappingTable[(i *BLOCKSEGMENTS) + j + 1], flashDevice->blockArray[i].BlockStatus[j],fehler, marker);
 		}
 		printf("Segment: unused (0) / assigned (1) / invalid (2)\n");
 		getchar();
