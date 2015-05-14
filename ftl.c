@@ -8,6 +8,8 @@ int recentBlock = 0;
 // Funktionen Cleaner
 // Nichts zu tun ? 
 
+uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int zugriffCleaner);
+
 uint32_t getMapT(flash_t *flashDevice, int block, int seg){
 	return flashDevice->mappingTable[(block * BLOCKSEGMENTS) + seg];
 }
@@ -17,15 +19,18 @@ int setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
 }
 
 void cleaner(flash_t *flashDevice){
-	int i = -1;
-	int j;
+	int i = recentBlock;
+	int j = 0;
+	int k = 0;
 	int loeschcount = 0;
 	int schwellwert = flashDevice->invalidCounter / (BLOCK_COUNT - flashDevice->freeBlocks);
 	uint8_t count;
 	uint32_t adress;
 	uint8_t temp[16];
-	while (i < BLOCK_COUNT && loeschcount < (BLOCKSEGMENTS / schwellwert) +1){ // Solange noch nicht alle Bloecke durchlaufen wurden oder genung Bloecke gereinigt wurden
-		i++; // i startet bei 0
+	if (schwellwert < 1){
+		schwellwert = 1;
+	}
+	while (k < BLOCK_COUNT && loeschcount < (BLOCKSEGMENTS / schwellwert) +1){ // Solange noch nicht alle Bloecke durchlaufen wurden oder genung Bloecke gereinigt wurden
 		if (flashDevice->blockArray[i].invalidCounter >= schwellwert && flashDevice->blockArray[i].status == used){ // Wenn Block über Schwellwert liegt und benutzt wird
 			for (j = 0; j < BLOCKSEGMENTS; j++){ // Für jedes Segment eines Blockes
 				if (flashDevice->blockArray[i].BlockStatus[j] == assigned){ // Wenn das Element benutzt wird
@@ -33,13 +38,12 @@ void cleaner(flash_t *flashDevice){
 					count = FL_readData(i, j / PAGES_PER_BLOCK, j % PAGES_PER_BLOCK * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, &temp);
 					//count = writeBlock(flashDevice, adress, &temp);
 					if (flashDevice->freeBlocks > 0){
-						count = writeBlock(flashDevice, adress, &temp);
+						count = writeBlockIntern(flashDevice, adress, &temp,1);
 					}
 					else {
 						printf("Cleaner Zugriffsfehler!\n");
 						printerr(flashDevice);
 					}
-					//flashDevice->blockArray[i].invalidCounter--;
 				}
 				flashDevice->blockArray[i].BlockStatus[j] = unused; // Segemente auf unused setzen
 			}
@@ -55,6 +59,20 @@ void cleaner(flash_t *flashDevice){
 				printf("Bad Block!\n"); // badBlock
 				flashDevice->blockArray[i].status = badBlock;
 			}
+			j = 0;
+		}
+		k++;
+		for (j = 0; j < BLOCKSEGMENTS; j++){
+			if ((flashDevice->blockArray[i].BlockStatus[j] != assigned && getMapT(flashDevice, i, j) != 0) ||
+				(flashDevice->blockArray[i].BlockStatus[j] == assigned && getMapT(flashDevice, i, j) == 0) ||
+				(flashDevice->blockArray[i].BlockStatus[j] > 2)){
+				printf("Cleaner Konsistenzfehler!\n");
+				printerr(flashDevice);
+			}
+		}
+		i++;
+		if (i >= BLOCK_COUNT){
+			i = 0;
 		}
 	}
 }
@@ -120,17 +138,16 @@ void printerr(flash_t *flashDevice){
 int setFreeBlock(flash_t *flashDevice, BlockStatus_t bs){
 	int i =0;
 	flashDevice->blockArray[flashDevice->activeBlockPosition / BLOCK_COUNT].status = bs;
-
-	while (flashDevice->blockArray[recentBlock].status != ready && i < BLOCK_COUNT)
+	flashDevice->freeBlocks--;
+	do
 	{
 		recentBlock++;
 		if (recentBlock == BLOCK_COUNT){
 			recentBlock = 0;
 		}
 		i++;
-	}
+	} while (flashDevice->blockArray[recentBlock].status != ready && i < BLOCK_COUNT);
 	flashDevice->activeBlockPosition = recentBlock * BLOCK_COUNT;
-	flashDevice->freeBlocks--;
 }
 
 // Gibt 512 Speicherplatz representation zurück [Blocksegment]
@@ -206,18 +223,22 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	int page;
 	int bp_index;
 	int i = mapping(flashDevice, index); // Mapping
+	uint16_t ret;
 	block = i / BLOCKSEGMENTS;
 	page = (i % BLOCKSEGMENTS) / PAGES_PER_BLOCK;
 	bp_index = (i % BLOCKSEGMENTS) % PAGES_PER_BLOCK;
-	return FL_readData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Blocksegment auslesen
+	ret =  FL_readData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Blocksegment auslesen
+	return ret;
 }
 
-uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
-	
-	int block = flashDevice->activeBlockPosition / BLOCK_COUNT; 
+uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int zugriffCleaner){
+
+	int block = flashDevice->activeBlockPosition / BLOCK_COUNT;
 	int page = (flashDevice->activeBlockPosition % BLOCK_COUNT) / PAGES_PER_BLOCK;
 	int bp_index = (flashDevice->activeBlockPosition % BLOCK_COUNT) % PAGES_PER_BLOCK;
 	int count;
+	int constcheck;
+
 	if (flashDevice->blockArray[block].status != ready){
 		setFreeBlock(flashDevice, used); // Versuche einen alternativen Block zu finden
 		printf("Fehler beim Schreiben des Datensatzes! Versuche alternativen Block!\n");
@@ -230,29 +251,47 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
 	if (count != LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten geschrieben wurden		}
 		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);
+		printerr(flashDevice);
 		return FALSE;
 	}
-	flashDevice->blockArray[block].BlockStatus[flashDevice->activeBlockPosition % BLOCK_COUNT] = assigned; // Beschriebenes Segement merken
-	
 	invalidationOfOldIndex(flashDevice, index); // Alten Eintrag in Mapping Table und Block invalidieren
-
-	setMapT(flashDevice, block, (page * PAGES_PER_BLOCK) + bp_index, index);
+	setMapT(flashDevice, block, (page * PAGES_PER_BLOCK) + bp_index, index); // Setze Mapeintrag
+	flashDevice->blockArray[block].BlockStatus[(page * PAGES_PER_BLOCK) + bp_index] = assigned; // Beschriebenes Segement merken
 
 	// Auswahl des nächsten Schreibortes
-	if ((page * PAGES_PER_BLOCK) +  bp_index < BLOCKSEGMENTS -1){ // position weiterzählen wenn innerhalb des selben blockes
+	if ((page * PAGES_PER_BLOCK) + bp_index < BLOCKSEGMENTS - 1){ // position weiterzählen wenn innerhalb des selben blockes
 		flashDevice->activeBlockPosition++;
 	}
 	else { // oder einen neuen Block auswählen
-		  // alten Block abschließen
+		// alten Block abschließen
 		setFreeBlock(flashDevice, used); // Freien Block finden und nutzen
-		if (flashDevice->freeBlocks < START_CLEANING + SPARE_BLOCKS){ // Cleaner
+		if (flashDevice->freeBlocks < START_CLEANING + SPARE_BLOCKS && zugriffCleaner == 0){ // Cleaner
 			// ToDo: Clean
 			cleaner(flashDevice);
 		}
-		if (flashDevice->freeBlocks <= SPARE_BLOCKS) { // Fehler falls zu wenig freie Blöcke da sind
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS && zugriffCleaner == 0) { // Fehler falls zu wenig freie Blöcke da sind
 			printf("Fehler Festplatte zu voll!\n");
+			printerr(flashDevice);
 			return FALSE;
 		}
 	}
+	// check
+	constcheck = mapping(flashDevice, index); // Mapping
+	block = constcheck / BLOCKSEGMENTS;
+	page = (constcheck % BLOCKSEGMENTS) / PAGES_PER_BLOCK;
+	bp_index = (constcheck % BLOCKSEGMENTS) % PAGES_PER_BLOCK;
+
+	/*if (getMapT(flashDevice, block, (page * PAGES_PER_BLOCK) + bp_index) == index && flashDevice->blockArray[block].BlockStatus[(page * PAGES_PER_BLOCK) + bp_index] == assigned){
 	return TRUE;
+	}
+	else {
+	printf("Konsistenzcheck fehlgeschlagen!\n");
+	printerr(flashDevice);
+	return FALSE;
+	}*/
+	return TRUE;
+}
+
+uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
+	return writeBlockIntern(flashDevice, index, data, 0);
 }
