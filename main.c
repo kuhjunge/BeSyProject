@@ -6,11 +6,8 @@ flash_t* ssd;
 flashMem_t flMe;
 #define TEST_COUNT 10000
 
-
-uint8_t myState[2 * STATEBLOCKSIZE], *statePtr;
 uint8_t myData[16], myRetData[16];
 uint16_t count;
-
 
 void writeData(int start, int amount, int rnd, int tc){
 	int i;
@@ -33,10 +30,10 @@ void writeData(int start, int amount, int rnd, int tc){
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);
 
-		writeBlock(ssd, r, &myData);
+		writeBlock(ssd, r, myData);
 
 		printf("Read\n");
-		readBlock(ssd, r, &myRetData);
+		readBlock(ssd, r, myRetData);
 		if (myRetData[0] != 'A'){
 			printf("Lesefehler\n\n");
 			printerr(ssd);
@@ -108,7 +105,7 @@ void load_test_OS(){
 }
 
 int main(int argc, char *argv[]) {
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 
 	//load_test_Random_Light(); // Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 
