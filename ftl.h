@@ -98,7 +98,8 @@ flash_t *mount(flashMem_t *flashHardware);
  * dieses Flash-Datenträgers dient.
  * Der Rückgabewert ist ein Pointer auf eine Datenstruktur vom Typ flash_t. Im
  *  Erfolgsfall wird NULL zurückgegeben(ToDo: ,bei einem Fehler kann die Information des
- * Fehlerfalls in der Datenstruktur abgelegt sein). */
+ * Fehlerfalls in der Datenstruktur abgelegt sein).
+ */
 flash_t *unmount(flash_t *flashDevice);
 
 /*
@@ -120,7 +121,8 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data);
  * dieses Flash-Datenträgers dient.
  * index ist die Nummer des zu schreibenden Blocks auf dem Flashdevice
  * data ist ein Pointer auf den Quelldatenblock.
- * Der Rückgabewert ist als Boolescher Wert zu interpretieren. */
+ * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
+ */
 uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
 
 // PUBLIC DEBUG Funktionen

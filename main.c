@@ -104,16 +104,52 @@ void load_test_OS(){
 	printf("Test Ende");
 }
 
+// Test ergänzen der Zahlen 1 - n mit Index 1 - n in den Speicher schreibt und anschließend wieder ausliest und prüft
+void mapping_test(){
+	uint32_t i, j;
+	uint8_t checkvalue;
+	printf("Mount \n");
+	FL_resetFlash(); // Start der Simulation
+	ssd = mount(&flMe);
+	printf("Write Prev\n");
+	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben
+	printf("Write\n"); // Sortiertes Schreiben
+	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){
+		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
+			uint8_t checkvalue = (uint8_t)((i * j) % 255);
+			myData[j] = checkvalue;
+		}
+		writeBlock(ssd, i, myData);
+	}
+	printf("Read\n"); // Sortiertes lesen
+	for (i = 1; i <= (BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS -1 ; i++){
+
+		readBlock(ssd, i, myRetData);
+		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
+			uint8_t checkvalue = (uint8_t)((i * j) % 255);
+			if (myRetData[j] != checkvalue){
+				printf("Mappingfehler\n");
+				// printerr(ssd);
+			}
+		}
+	}
+
+	printf("Unmount\n");
+	//unmount(&myData);
+	printf("Mappingtest erfolgreich\n");
+	printerr(ssd);
+}
+
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//load_test_Random_Light(); // Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 
-	load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
+	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	// load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
+	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 
-	// overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
+	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] )
 
-
+	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 }

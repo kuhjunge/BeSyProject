@@ -28,7 +28,7 @@ int mapping(flash_t *flashDevice, uint32_t index);
 /* 
  * Löscht einen Eintrag in der Map und invalidiert das dazugehörige Segment
  */
-void invalidationOfOldIndex(flash_t *flashDevice, uint32_t index);
+void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint16_t segment);
 
 // Funktionen Cleaner
 ////////////////////////////////////////////////////////////////////
@@ -56,8 +56,9 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs);
  * data ist ein Pointer auf den Quelldatenblock.
  * Der zusätzliche useCleaner Parameter gibt an ob die Funktion vom Cleaner aufgerufen wird, 
  * in diesem Fall ruft sie intern den Cleaner nicht auf und nutzt auch Spare Blöcke
- * Der Rückgabewert ist als Boolescher Wert zu interpretieren. */
-uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int useCleaner);
+ * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
+ */
+uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int useCleaner, uint16_t block_index, uint16_t segment_index);
 
 /*
 * Liest einen Datenblock an der angegebene physikalischen vom Flashspeicher, der mit der
@@ -97,17 +98,12 @@ int mapping(flash_t *flashDevice, uint32_t index){
 }
 
 // Basis FTL Funktion oder Allocator Funktion, evtl aufsplitten?  
-void invalidationOfOldIndex(flash_t *flashDevice, uint32_t index){ // ToDo: Prüft auf Null, erzeugt evtl fehler bei ID Null ?
-	int old_block, i;
-	int oldDataIndex = mapping(flashDevice, index); // Testen ob schon Eintrag mit diesem Index vorhanden ist
-	if (oldDataIndex < MAPPING_TABLE_SIZE){
-		i = BLOCKSEGMENTS;
-		old_block = oldDataIndex / i;
-		setMapT(flashDevice, oldDataIndex / BLOCKSEGMENTS, oldDataIndex % BLOCKSEGMENTS, 0);
-		flashDevice->blockArray[old_block].segmentStatus[oldDataIndex - (old_block * i)] = invalid;
-		flashDevice->invalidCounter++;
-		flashDevice->blockArray[old_block].invalidCounter++;
-	}
+void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint16_t segment){ // ToDo: Prüft auf Null, erzeugt evtl fehler bei ID Null ?
+	setMapT(flashDevice, block , segment , 0);
+	flashDevice->blockArray[block].segmentStatus[segment] = invalid;
+	flashDevice->invalidCounter++;
+	flashDevice->blockArray[block].invalidCounter++;
+	//}
 }
 
 // Lokale Funktionsimplementation  Cleaner
@@ -130,7 +126,7 @@ void cleaner(flash_t *flashDevice){
 					adress = getMapT(flashDevice, i, j);
 					readBlockIntern(flashDevice,i, j / FL_getPagesPerBlock (), j % FL_getPagesPerBlock (),  temp);
 					if (flashDevice->freeBlocks > 0){
-						writeBlockIntern(flashDevice, adress, temp,TRUE);
+						writeBlockIntern(flashDevice, adress, temp,TRUE,i,j);
 					}
 					else {
 						printf("Cleaner Zugriffsfehler!\n");
@@ -200,14 +196,16 @@ uint8_t readBlockIntern(flash_t *flashDevice, uint16_t block, uint16_t page, uin
 	return TRUE;
 }
 
-uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int useCleaner){
+uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, int useCleaner, uint16_t block_index, uint16_t segment_index){
 
-	int block = flashDevice->activeBlockPosition / FL_getBlockCount();
-	int page = (flashDevice->activeBlockPosition % FL_getBlockCount()) / FL_getPagesPerBlock();
-	int bp_index = (flashDevice->activeBlockPosition % FL_getBlockCount()) % FL_getPagesPerBlock();
+	uint16_t block = flashDevice->activeBlockPosition / FL_getBlockCount();
+	uint16_t page = (flashDevice->activeBlockPosition % FL_getBlockCount()) / FL_getPagesPerBlock();
+	uint16_t bp_index = (flashDevice->activeBlockPosition % FL_getBlockCount()) % FL_getPagesPerBlock();
 	uint16_t count;
-	if (index < 1){ // Fehlerhafter Index wurde übergeben
+	uint32_t index_old;
+	if (index < 1 && block_index == FL_getBlockCount() +1 ){ // Fehlerhafter Index wurde übergeben
 		printf("Fehlerhafter Index wurde uebergeben. Index darf nicht < 1  sein!\n");
+		printerr(flashDevice);
 		return FALSE;
 	}
 
@@ -226,7 +224,16 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 		printerr(flashDevice);
 		return FALSE;
 	}
-	invalidationOfOldIndex(flashDevice, index); // Alten Eintrag in Mapping Table und Block invalidieren
+	if (index > 0){
+		index_old = mapping(flashDevice, index);
+		if (index_old < MAPPING_TABLE_SIZE){
+			invalidationOfOldIndex(flashDevice, index_old / BLOCKSEGMENTS, index_old % BLOCKSEGMENTS); // Alten Eintrag in Mapping Table und Block invalidieren
+		} 
+	}
+	else {
+		index = getMapT(flashDevice, block_index, segment_index); // alten Eintrag zwischenspeichern
+		invalidationOfOldIndex(flashDevice, block_index, segment_index); // Alten Eintrag in Mapping Table und Block invalidieren
+	}
 	setMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index, index); // Setze Mapeintrag
 	flashDevice->blockArray[block].segmentStatus[(page * FL_getPagesPerBlock()) + bp_index] = assigned; // Beschriebenes Segement merken
 
@@ -237,11 +244,11 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 	else { // oder einen neuen Block auswählen
 		// alten Block abschließen
 		setFreeBlock(flashDevice, used); // Freien Block finden und nutzen
-		if (flashDevice->freeBlocks < START_CLEANING + SPARE_BLOCKS && useCleaner == 0){ // Cleaner
+		if (flashDevice->freeBlocks < START_CLEANING + SPARE_BLOCKS && useCleaner == FALSE){ // Cleaner
 			cleaner(flashDevice); // Clean
 		}
-		if (flashDevice->freeBlocks <= SPARE_BLOCKS && useCleaner == 0) { // Fehler falls zu wenig freie Blöcke da sind
-			printf("Fehler! Festplatte zu voll! [ueber %i byte geschrieben]\n", (BLOCKSEGMENTS * (FL_getBlockCount() - SPARE_BLOCKS) * LOGICAL_BLOCK_DATASIZE));
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS && useCleaner == FALSE) { // Fehler falls zu wenig freie Blöcke da sind
+			printf("Fehler! Festplatte zu voll! [ueber %i byte geschrieben]\n", (BLOCKSEGMENTS * (FL_getBlockCount() - SPARE_BLOCKS) * LOGICAL_BLOCK_DATASIZE) -1);
 			printerr(flashDevice);
 			return FALSE;
 		}
@@ -298,7 +305,7 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 }
 
 uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
-	return writeBlockIntern(flashDevice, index, data, 0);
+	return writeBlockIntern(flashDevice, index, data, FALSE, FL_getBlockCount() + 1, 0);
 }
 
 // DEBUG Funktionsimplementation FLT
