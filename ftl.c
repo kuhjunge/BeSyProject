@@ -227,7 +227,7 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 	if (index > 0){
 		index_old = mapping(flashDevice, index);
 		if (index_old < MAPPING_TABLE_SIZE){
-			invalidationOfOldIndex(flashDevice, index_old / BLOCKSEGMENTS, index_old % BLOCKSEGMENTS); // Alten Eintrag in Mapping Table und Block invalidieren
+			invalidationOfOldIndex(flashDevice, (uint16_t)index_old / BLOCKSEGMENTS, (uint16_t)index_old % BLOCKSEGMENTS); // Alten Eintrag in Mapping Table und Block invalidieren
 		} 
 	}
 	else {
@@ -261,22 +261,26 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 
 flash_t * mount(flashMem_t *flashHardware){
 	uint32_t i, j;
-	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
+	// uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
 	flash_t * flde;
+	uint8_t myState[20 * STATEBLOCKSIZE ];
 
-	uint8_t  myReadData;
+	uint8_t  testRead; // Dummy - nur zum Speicherlesezugriff notwendig / inhalt egal
 	uint16_t count;
 	// Laden der Datenstruktur
-	count = FL_readSpare(0, 0, 0, 1, &myReadData);
+	count = FL_readSpare(0, 0, 0, 1, &testRead);
 	if (count < 1){
 		printf("Kein initialisierter Flash Speicher gefunden!\n");
 		return NULL;
 	}
 	if (FL_getStateSize() > 0){
-		state = (uint8_t*)malloc(sizeof(uint8_t)* FL_getStateSize()); // allocate 
-		FL_restoreState(state);
-		flde = state; // ToDo: BUG!!!! Funktioniert noch nicht	
+		//state = (uint8_t*)malloc(sizeof(uint8_t) * FL_getStateSize()); // allocate 
+		//FL_restoreState(state);
+		FL_restoreState(myState);
+		//flde = state;
+		flde =  myState;
 		flashDevice = *flde;
+		//free (state);
 		flashDevice.isNoErr = TRUE;
 		printf("Mounting Punkt wiederhergestellt!\n"); 
 	}
@@ -304,13 +308,12 @@ flash_t * mount(flashMem_t *flashHardware){
 }
 
 flash_t *unmount(flash_t *flashDevice){
-	//uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
 	uint16_t sizeArray, sizeBlock;
 	if (flashDevice == NULL) return FALSE;
 	sizeArray = sizeof(*flashDevice) / 8;
 	sizeBlock = ((sizeof(*flashDevice) / 512) +1) ;
 	printf("Groesse der geunmounteten Datenstruktur: %i (%i)\n", sizeBlock, sizeArray);
-	flashDevice->isNoErr = FL_saveState(sizeBlock, flashDevice);
+	flashDevice->isNoErr = FL_saveState((uint8_t)sizeBlock, flashDevice);
 	return flashDevice; 
 }
 
