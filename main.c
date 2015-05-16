@@ -135,7 +135,7 @@ void mapping_test(){
 	}
 
 	printf("Unmount\n");
-	//unmount(&myData);
+	// ssd = unmount(&ssd);
 	printf("Mappingtest erfolgreich\n");
 	printerr(ssd);
 }
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
 	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 
-	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] )
+	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 }
