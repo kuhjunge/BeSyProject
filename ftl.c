@@ -261,14 +261,22 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 
 flash_t * mount(flashMem_t *flashHardware){
 	uint32_t i, j;
-	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
+	//uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
 	uint8_t stateSize = FL_getStateSize();
 	flash_t * flde;
+
+	uint8_t  myReadData;
+	uint16_t count;
 	// Laden der Datenstruktur
-	state = (uint8_t*)malloc(sizeof(uint8_t)* stateSize); // allocate 
+	count = FL_readSpare(0, 0, 0, 1, &myReadData);
+	if (count < 1){
+		printf("Kein initialisierter Flash Speicher gefunden!\n");
+		return NULL;
+	}
 	if (stateSize > 0){
-		uint8_t *FL_restoreState(state);
-		flde = state; // ToDo: BUG!!!! Funktioniert noch nicht	
+		//state = (uint8_t*)malloc(sizeof(uint8_t)* stateSize); // allocate 
+		uint8_t *FL_restoreState(flde);
+		//flde = state; // ToDo: BUG!!!! Funktioniert noch nicht	
 		flashDevice = *flde;
 		printf("Mounting Punkt wiederhergestellt!\n"); 
 	}
@@ -297,20 +305,25 @@ flash_t * mount(flashMem_t *flashHardware){
 
 flash_t *unmount(flash_t *flashDevice){
 	//uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
-	uint16_t sizeArray = sizeof(*flashDevice) / 8;
-	uint16_t sizeBlock = ((sizeof(*flashDevice) / 512) +1) ;
+	uint16_t sizeArray, sizeBlock;
+	if (flashDevice == NULL) return FALSE;
+	sizeArray = sizeof(*flashDevice) / 8;
+	sizeBlock = ((sizeof(*flashDevice) / 512) +1) ;
 	printf("Groesse der geunmounteten Datenstruktur: %i (%i)\n", sizeBlock, sizeArray);
 	flashDevice->isErr = FL_saveState(sizeBlock, flashDevice);
 	return flashDevice; 
 }
 
 uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
-	uint16_t i = mapping(flashDevice, index); // Mapping
+	uint16_t i;
+	if (flashDevice == NULL) return FALSE;
+	i = mapping(flashDevice, index); // Mapping
 	return readBlockIntern(flashDevice, i / BLOCKSEGMENTS, (i % BLOCKSEGMENTS) / FL_getPagesPerBlock (), ((i % BLOCKSEGMENTS) % FL_getPagesPerBlock ()), data); // Blocksegment auslesen
 
 }
 
 uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
+	if (flashDevice == NULL) return FALSE;
 	return writeBlockIntern(flashDevice, index, data, FALSE, FL_getBlockCount() + 1, 0);
 }
 
@@ -318,14 +331,11 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 ////////////////////////////////////////////////////////////////////
 
 void printerr(flash_t *flashDevice){
-	uint16_t i, j, invCo = 0, del = 0;
-	uint16_t block = flashDevice->activeBlockPosition / FL_getBlockCount();
-	uint16_t segment = (flashDevice->activeBlockPosition % FL_getBlockCount());
-	char marker;
-	char error;
-	char userInput;
-	char unMountErr = 'j';
-	uint16_t calcLevel = 0;
+	uint16_t i, j, invCo = 0, del = 0, block, segment, calcLevel = 0;
+	char marker, error,	userInput, unMountErr = 'j';
+	if (flashDevice == NULL) return;
+	block = flashDevice->activeBlockPosition / FL_getBlockCount();
+	segment = (flashDevice->activeBlockPosition % FL_getBlockCount());
 	printf("\nFehleranalyse mit 'j'\n");
 	scanf_s("%c", &userInput);
 	getchar();

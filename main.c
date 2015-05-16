@@ -51,6 +51,10 @@ void load_test_Random_Full(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	writeData(0, 495, 1, TEST_COUNT);
 
 	printf("Unmount\n");
@@ -64,6 +68,10 @@ void overload_test_Random(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	writeData(0, 496, 1, TEST_COUNT);
 
 	printf("Unmount\n");
@@ -74,9 +82,12 @@ void overload_test_Random(){
 
 void mount_test_Light(){
 	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
+	//FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
-
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	writeData(0, 120, 1, ((BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS - 1) * 2);
 
 	printf("Unmount\n");
@@ -90,7 +101,10 @@ void load_test_Random_Light(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
-
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	writeData(0, 120, 1, TEST_COUNT);
 
 	printf("Unmount\n");
@@ -108,7 +122,10 @@ void load_test_OS(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
-
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	writeData(0, 119, 0, 120); // Installation OS
 	for (i = 0; i < 20; i++){
 		writeData(119, 239, 1, 200); // File Usage
@@ -127,12 +144,16 @@ void mapping_test(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
 	printf("Write Prev\n");
 	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben
 	printf("Write\n"); // Sortiertes Schreiben
 	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
-			uint8_t checkvalue = (uint8_t)((i * j) % 255);
+			checkvalue = (uint8_t)((i * j) % 255);
 			myData[j] = checkvalue;
 		}
 		writeBlock(ssd, i, myData);
@@ -142,7 +163,7 @@ void mapping_test(){
 
 		readBlock(ssd, i, myRetData);
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
-			uint8_t checkvalue = (uint8_t)((i * j) % 255);
+			checkvalue = (uint8_t)((i * j) % 255);
 			if (myRetData[j] != checkvalue){
 				printf("Mappingfehler\n");
 				// printerr(ssd);
@@ -170,4 +191,5 @@ int main(int argc, char *argv[]) {
 	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
+
 }
