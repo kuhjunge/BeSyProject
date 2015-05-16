@@ -2,7 +2,7 @@
 #include "ftl.h"
 
 flash_t flashDevice; // Datenstruktur
-int recentBlock = 0; // ToDo: Marker für die Blockauswahl (evtl in Datenstruktur schieben?)
+uint16_t recentBlock = 0; // ToDo: Marker für die Blockauswahl (evtl in Datenstruktur schieben?)
 
 // Funktionen Allocator
 ////////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v);
  * Übersetzt die logischen Nummer eines Datenblocks in die physikalische Position 
  * Gibt die physikalische Position eines Datenblocks zurück
  */
-int mapping(flash_t *flashDevice, uint32_t index);
+uint16_t mapping(flash_t *flashDevice, uint32_t index);
 
 /* 
  * Löscht einen Eintrag in der Map und invalidiert das dazugehörige Segment
@@ -83,10 +83,10 @@ void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
 }
 
 // Gibt 512 Speicherplatz representation zurück [Blocksegment]
-int mapping(flash_t *flashDevice, uint32_t index){
+uint16_t mapping(flash_t *flashDevice, uint32_t index){
 	uint32_t target;
-	int i = 0;
-	int x = MAPPING_TABLE_SIZE;
+	uint16_t i = 0;
+	uint16_t x = MAPPING_TABLE_SIZE;
 	for (i = 0; i < x; i++){
 		target = getMapT(flashDevice, i / BLOCKSEGMENTS, i % BLOCKSEGMENTS);
 		if (target == index){ return i; }
@@ -109,9 +109,9 @@ void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint16_t segme
 // Lokale Funktionsimplementation  Cleaner
 ////////////////////////////////////////////////////////////////////
 void cleaner(flash_t *flashDevice){
-	int i = recentBlock;
-	int j = 0;
-	int k = 0;
+	uint16_t i = recentBlock;
+	uint16_t j = 0;
+	uint16_t k = 0;
 	uint16_t deleteCount = 0;
 	uint16_t level = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
 	uint32_t adress;
@@ -166,7 +166,7 @@ void cleaner(flash_t *flashDevice){
 }
 
 void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs){
-	int i = 0;
+	uint16_t i = 0;
 	flashDevice->blockArray[flashDevice->activeBlockPosition / FL_getBlockCount()].status = bs;
 	flashDevice->freeBlocks--;
 	do
@@ -259,47 +259,53 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 // Funktionsimplementation FLT
 ////////////////////////////////////////////////////////////////////
 
-flash_t *mount(flashMem_t *flashHardware){
+flash_t * mount(flashMem_t *flashHardware){
 	uint32_t i, j;
-
-	// flashDevice.flashHardware = flashHardware;
-	// Initialisieren
-	flashDevice.isErr = 0;
-	for (i = 0; i < FL_getBlockCount (); i++){
-		for (j = 0; j < FL_getPagesPerBlock () * ( FL_getPageDataSize () / LOGICAL_BLOCK_DATASIZE); j++){
-			flashDevice.blockArray[i].segmentStatus[j] = empty;
+	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
+	uint8_t stateSize = FL_getStateSize();
+	flash_t * flde;
+	// Laden der Datenstruktur
+	state = (uint8_t*)malloc(sizeof(uint8_t)* stateSize); // allocate 
+	if (stateSize > 0){
+		uint8_t *FL_restoreState(state);
+		flde = state; // ToDo: BUG!!!! Funktioniert noch nicht														!FEHLER, bitte korrigieren!
+	}
+	else {
+		// Initialisieren
+		flashDevice.isErr = 0;
+		for (i = 0; i < FL_getBlockCount(); i++){
+			for (j = 0; j < FL_getPagesPerBlock() * (FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE); j++){
+				flashDevice.blockArray[i].segmentStatus[j] = empty;
+			}
+			flashDevice.blockArray[i].invalidCounter = 0;
+			flashDevice.blockArray[i].deleteCounter = 0;
+			flashDevice.blockArray[i].status = ready;
 		}
-		flashDevice.blockArray[i].invalidCounter = 0;
-		flashDevice.blockArray[i].deleteCounter = 0;
-		flashDevice.blockArray[i].status = ready;
+		for (i = 0; i < MAPPING_TABLE_SIZE; i++){
+			flashDevice.mappingTable[i] = 0;
+		}
+		flashDevice.activeBlockPosition = 0;
+		flashDevice.invalidCounter = 0;
+		flashDevice.freeBlocks = FL_getBlockCount();
+		flde = &flashDevice;
 	}
-	for (i = 0; i < MAPPING_TABLE_SIZE; i++){
-		flashDevice.mappingTable[i] = 0;
-	}
-	flashDevice.activeBlockPosition = 0;
-	flashDevice.invalidCounter = 0;
-	flashDevice.freeBlocks = FL_getBlockCount ();
-	//uint8_t *FL_restoreState(unit8_t *state)
-
-	//ToDo: Datenstruktur laden
-	return &flashDevice; // ToDo
+	return flde; // ToDo
 }
 
 flash_t *unmount(flash_t *flashDevice){
-/*	uint8_t stateSize = FL_getStateSize();
-	uint8_t* state = (uint8_t*)malloc(sizeof(uint8_t) * stateSize); // allocate 
-	if (stateSize > 0){
-		// FL_getStateSize(void)
-		FL_saveState(FL_getBlockCount (), *state);
-	}
-	// ToDo Datenstruktur speichern
-	*/
+	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
+	uint16_t sizeArray = sizeof(*flashDevice) / 8;
+	uint16_t sizeBlock = (sizeof(*flashDevice) / 512) +1;
+	state = (uint8_t*)malloc(sizeof(uint8_t)* sizeArray); // allocate
+	state = flashDevice; // ToDo: BUG!!!! Funktioniert noch nicht														!FEHLER, bitte korrigieren!
+	printf("Groesse der geunmounteten Datenstruktur: %i (%i)\n", sizeBlock, sizeArray);
+	flashDevice->isErr = ! ( FL_saveState(sizeof(flashDevice) / 512, state));
 	// Fehlerfall Datenstruktur mit Fehlermeldung zurück geben
-	return NULL; // ToDo
+	return flashDevice; // ToDo
 }
 
 uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
-	int i = mapping(flashDevice, index); // Mapping
+	uint16_t i = mapping(flashDevice, index); // Mapping
 	return readBlockIntern(flashDevice, i / BLOCKSEGMENTS, (i % BLOCKSEGMENTS) / FL_getPagesPerBlock (), ((i % BLOCKSEGMENTS) % FL_getPagesPerBlock ()), data); // Blocksegment auslesen
 
 }
@@ -312,20 +318,24 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 ////////////////////////////////////////////////////////////////////
 
 void printerr(flash_t *flashDevice){
-	int i, j, invCo = 0, del = 0;
-	int block = flashDevice->activeBlockPosition / FL_getBlockCount();
-	int segment = (flashDevice->activeBlockPosition % FL_getBlockCount());
+	uint16_t i, j, invCo = 0, del = 0;
+	uint16_t block = flashDevice->activeBlockPosition / FL_getBlockCount();
+	uint16_t segment = (flashDevice->activeBlockPosition % FL_getBlockCount());
 	char marker;
 	char error;
 	char userInput;
+	uint16_t calcLevel = 0;
 	printf("\nFehleranalyse mit 'j'\n");
 	scanf_s("%c", &userInput);
 	getchar();
 	if (userInput == 'j')
 	{
+		if ((FL_getBlockCount() - flashDevice->freeBlocks) > 0){
+			calcLevel = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks);
+		}
 		printf("Freie Blocks: %i\nInvalide Segmente: %i (Schwellwert %i)\nAktuelle Schreibposition: %i (B:%i / S:%i)\n\n"
 
-			, flashDevice->freeBlocks, flashDevice->invalidCounter, flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks), flashDevice->activeBlockPosition, block, segment);
+			, flashDevice->freeBlocks, flashDevice->invalidCounter, calcLevel, flashDevice->activeBlockPosition, block, segment);
 		printf("Block | Status | Invalide Segmente | Loeschanzahl\n");
 		for (i = 0; i < FL_getBlockCount(); i++)
 		{

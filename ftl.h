@@ -48,8 +48,8 @@ typedef enum
 typedef struct Block_struct
 {
 	StatusPageElem_t segmentStatus[BLOCKSEGMENTS];
-	int deleteCounter;
-	int invalidCounter;
+	uint16_t deleteCounter;
+	uint16_t invalidCounter;
 	BlockStatus_t status;
 
 } Block_t;
@@ -59,7 +59,6 @@ typedef struct Block_struct
  *  blockArray Array mit Block Datenstruktur zur Verwaltung der Blöcke-> Siehe Block_t
  *  invalidCounter Zählt die invaliden Segmente im gesammten FTL
  *  activeBlockPosition Aktuelle Schreibposition
- *  state ????
  *  isErr ?????
  *  freeBlocks Anzahl der freien Blocks die zum Schreibzugriff zur verfügung stehen
  */
@@ -68,11 +67,10 @@ typedef struct flash_struct
 	// flashMem_t *flashHardware; // Die Hardware mit den Daten [kann weg ?]
 	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
-	int invalidCounter;
-	int activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
-	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
-	int isErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
-	int freeBlocks;
+	uint16_t invalidCounter;
+	uint16_t activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
+	uint16_t isErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
+	uint16_t freeBlocks;
 } flash_t;
 
 // PUBLIC Funktionen
