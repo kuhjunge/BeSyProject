@@ -69,7 +69,7 @@ typedef struct flash_struct
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
 	uint16_t invalidCounter;
 	uint16_t activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
-	uint16_t isErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
+	uint16_t isNoErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
 	uint16_t freeBlocks;
 } flash_t;
 

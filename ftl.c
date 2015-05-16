@@ -261,8 +261,7 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, in
 
 flash_t * mount(flashMem_t *flashHardware){
 	uint32_t i, j;
-	//uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
-	uint8_t stateSize = FL_getStateSize();
+	uint8_t* state; // pointer auf dem der Flash speicher konserviert werden soll
 	flash_t * flde;
 
 	uint8_t  myReadData;
@@ -273,16 +272,17 @@ flash_t * mount(flashMem_t *flashHardware){
 		printf("Kein initialisierter Flash Speicher gefunden!\n");
 		return NULL;
 	}
-	if (stateSize > 0){
-		//state = (uint8_t*)malloc(sizeof(uint8_t)* stateSize); // allocate 
-		uint8_t *FL_restoreState(flde);
-		//flde = state; // ToDo: BUG!!!! Funktioniert noch nicht	
+	if (FL_getStateSize() > 0){
+		state = (uint8_t*)malloc(sizeof(uint8_t)* FL_getStateSize()); // allocate 
+		FL_restoreState(state);
+		flde = state; // ToDo: BUG!!!! Funktioniert noch nicht	
 		flashDevice = *flde;
+		flashDevice.isNoErr = TRUE;
 		printf("Mounting Punkt wiederhergestellt!\n"); 
 	}
 	else {
 		// Initialisieren
-		flashDevice.isErr = 0;
+		flashDevice.isNoErr = TRUE;
 		for (i = 0; i < FL_getBlockCount(); i++){
 			for (j = 0; j < FL_getPagesPerBlock() * (FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE); j++){
 				flashDevice.blockArray[i].segmentStatus[j] = empty;
@@ -310,7 +310,7 @@ flash_t *unmount(flash_t *flashDevice){
 	sizeArray = sizeof(*flashDevice) / 8;
 	sizeBlock = ((sizeof(*flashDevice) / 512) +1) ;
 	printf("Groesse der geunmounteten Datenstruktur: %i (%i)\n", sizeBlock, sizeArray);
-	flashDevice->isErr = FL_saveState(sizeBlock, flashDevice);
+	flashDevice->isNoErr = FL_saveState(sizeBlock, flashDevice);
 	return flashDevice; 
 }
 
@@ -332,7 +332,7 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 
 void printerr(flash_t *flashDevice){
 	uint16_t i, j, invCo = 0, del = 0, block, segment, calcLevel = 0;
-	char marker, error,	userInput, unMountErr = 'j';
+	char marker, error,	userInput, unMountErr = 'n';
 	if (flashDevice == NULL) return;
 	block = flashDevice->activeBlockPosition / FL_getBlockCount();
 	segment = (flashDevice->activeBlockPosition % FL_getBlockCount());
@@ -344,8 +344,8 @@ void printerr(flash_t *flashDevice){
 		if ((FL_getBlockCount() - flashDevice->freeBlocks) > 0){
 			calcLevel = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks);
 		}
-		if (flashDevice->isErr == TRUE){
-			unMountErr = 'n';
+		if (flashDevice->isNoErr == TRUE){
+			unMountErr = 'j';
 		}
 		printf("Freie Blocks: %i\nInvalide Segmente: %i (Schwellwert %i)\nAktuelle Schreibposition: %i (B:%i / S:%i)\nUnmount Fehler: %c \n\n"
 
