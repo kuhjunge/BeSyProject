@@ -13,7 +13,7 @@
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							// TODO: Ist es in Ordnung Konstanten bei der Definition der Konstanten zu verwenden?
 // Cleaner Konstanten
 #define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
-#define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks
+#define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks zusätzlich zum active Block
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 // ToDo 
 
@@ -24,7 +24,7 @@
  */
 typedef enum
 {
-	empty, assigned, invalid // evtl ein "inProgress" verwenden ?
+	empty, assigned, invalid
 
 } StatusPageElem_t;
 
@@ -35,7 +35,7 @@ typedef enum
  */
 typedef enum
 {
-	ready, used, badBlock
+	ready, used, badBlock, active
 
 } BlockStatus_t;
 
@@ -47,7 +47,6 @@ typedef enum
  */
 typedef struct Block_struct
 {
-	StatusPageElem_t segmentStatus[BLOCKSEGMENTS];
 	uint16_t deleteCounter;
 	uint16_t invalidCounter;
 	BlockStatus_t status;
@@ -64,7 +63,6 @@ typedef struct Block_struct
  */
 typedef struct flash_struct
 {
-	// flashMem_t *flashHardware; // Die Hardware mit den Daten [kann weg ?]
 	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
 	uint16_t invalidCounter;
