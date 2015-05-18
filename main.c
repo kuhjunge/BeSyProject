@@ -60,7 +60,7 @@ void load_test_Random_Full(){
 	printf("Unmount\n");
 	ssd = unmount(ssd);
 	printerr(ssd);
-	printf("Test Ende");
+	printf("load_test_Random_Full Ende");
 }
 
 void overload_test_Random(){
@@ -72,12 +72,12 @@ void overload_test_Random(){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-	writeData(0, 496, 1, TEST_COUNT);
+	writeData(0, 496, 0, 496);
 
 	printf("Unmount\n");
 	ssd = unmount(ssd);
 	printerr(ssd);
-	printf("Test Ende");
+	printf("overload_test_Random Ende");
 }
 
 void mount_test_Light(){
@@ -95,7 +95,7 @@ void mount_test_Light(){
 	ssd = NULL;
 	ssd = mount(&flMe);
 	printerr(ssd);
-	printf("Test Ende");
+	printf("mount_test_Light Ende");
 }
 
 void load_test_Random_Light(){
@@ -110,7 +110,8 @@ void load_test_Random_Light(){
 
 	printf("Unmount\n");
 	ssd = unmount(ssd);
-	printf("Test Ende");
+	printf("load_test_Random_Light Ende");
+	printerr(ssd);
 }
 
 void load_test_OS(){
@@ -132,7 +133,7 @@ void load_test_OS(){
 	printf("Unmount\n");
 	ssd = unmount(ssd);
 	printerr(ssd);
-	printf("Test Ende");
+	printf("load_test_OS Ende");
 }
 
 // Test ergänzen der Zahlen 1 - n mit Index 1 - n in den Speicher schreibt und anschließend wieder ausliest und prüft
@@ -183,11 +184,10 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
-
-	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
+	overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 
 }
