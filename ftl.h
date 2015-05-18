@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "flashhardware.h"
+#include "list.h"
 
 // Allocator Konstanten
 #define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
@@ -15,6 +16,8 @@
 #define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
 #define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
+#define THETA 12																	// Definiert die Größe des neutralen Pools	
+#define DELTA 5																		// Definiert den Bereich für BlockNeutralisationen
 // ToDo 
 
 /*	Zustände für die physikalische Liste							
@@ -71,6 +74,10 @@ typedef struct flash_struct
 	uint16_t activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
 	uint16_t isNoErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
 	uint16_t freeBlocks;
+ 	List_t* hotPool;
+	List_t* coldPool;
+	List_t* neutralPool;
+	uint32_t AVG;// globaler AVG
 } flash_t;
 
 // PUBLIC Funktionen
