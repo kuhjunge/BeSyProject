@@ -2,7 +2,7 @@
 
 // Lokale Funktionsimplementation List
 ////////////////////////////////////////////////////////////////////
-List_t* initList(Block_t** blockArray){
+List_t* initList(Block_t* blockArray){
 	List_t* list = (List_t*)malloc(sizeof(List_t*));
 	list->AVG = 0;
 	list->blockArray = blockArray;
@@ -12,7 +12,12 @@ List_t* initList(Block_t** blockArray){
 	return list;
 }
 
-void freeList(List_t* list);
+void freeList(List_t* list){
+	while(list->blockCounter > 0){
+		list->first;
+	}
+	free(list);
+}
 
 void addBlock(List_t* list, uint16_t blockNr){
 	ListElem_t* elem = (ListElem_t*)malloc(sizeof(ListElem_t));//Erzeuge neues Element
@@ -25,12 +30,12 @@ void addBlock(List_t* list, uint16_t blockNr){
 		list->first = elem;
 		list->last = elem;
 		list->blockCounter++;
-		list->AVG = list->blockArray[blockNr]->deleteCounter;
+		list->AVG = list->blockArray[blockNr].deleteCounter;
 	}
 	else{// es ist min. ein Block schon in Liste enthalten
 		elem->blockNr = blockNr;
 		posElem = list->first;
-		while(list->blockArray[posElem->blockNr] > list->blockArray[blockNr] && posElem != list->last){
+		while(list->blockArray[posElem->blockNr].deleteCounter > list->blockArray[blockNr].deleteCounter && posElem != list->last){
 			posElem = posElem->next;
 		}
 		if(posElem == list->first){//wenn vor erstes Element eingefügt werden soll
@@ -48,13 +53,13 @@ void addBlock(List_t* list, uint16_t blockNr){
 			list->last = elem;
 		}
 		//Berechne AVG neu
-		list->AVG = list->AVG * list->blockCounter + list->blockArray[blockNr]->deleteCounter;
+		list->AVG = list->AVG * list->blockCounter + list->blockArray[blockNr].deleteCounter;
 		list->blockCounter++;
 		list->AVG = list->AVG / list->blockCounter;
 	}
 }
 
-uint16_t getFirstBlock(List_t* list){
+uint32_t getFirstBlock(List_t* list){
 	ListElem_t* elem = list->first;
 	uint16_t blockNr = 0;
 
@@ -76,7 +81,7 @@ uint16_t getFirstBlock(List_t* list){
 		list->blockCounter--;
 	}
 	//Berechne AVG neu
-	list->AVG = list->AVG * (list->blockCounter + 1) - list->blockArray[elem->blockNr]->deleteCounter;	
+	list->AVG = list->AVG * (list->blockCounter + 1) - list->blockArray[elem->blockNr].deleteCounter;	
 	list->AVG = list->AVG / list->blockCounter;
 
 	//hänge Pointer um
@@ -87,7 +92,7 @@ uint16_t getFirstBlock(List_t* list){
 	return blockNr;	
 }
 
-uint16_t getLastBlock(List_t* list){
+uint32_t getLastBlock(List_t* list){
 	ListElem_t* elem = list->last;
 	uint16_t blockNr = 0;
 
@@ -109,7 +114,7 @@ uint16_t getLastBlock(List_t* list){
 		list->blockCounter--;
 	}
 	//Berechne AVG neu
-	list->AVG = list->AVG * (list->blockCounter + 1) - list->blockArray[elem->blockNr]->deleteCounter;	
+	list->AVG = list->AVG * (list->blockCounter + 1) - list->blockArray[elem->blockNr].deleteCounter;	
 	list->AVG = list->AVG / list->blockCounter;
 
 	//hänge Pointer um
@@ -118,4 +123,30 @@ uint16_t getLastBlock(List_t* list){
 	list->last->next = NULL;
 	free(elem);
 	return blockNr;
+}
+
+void recalculationAVG(List_t* list){
+	ListElem_t* elem = list->first;
+	uint32_t counter = 0;
+
+	while(elem->next != NULL){
+		counter += list->blockArray[elem->blockNr].deleteCounter;
+		elem = elem->next;
+	}
+	
+	list->AVG = counter / list->blockCounter;
+
+}
+
+bool isElementOfList(List_t* list, uint32_t blockNr){
+	ListElem_t* elem = list->first;	
+
+	while(elem->next != NULL){
+		if(elem->blockNr == blockNr){
+			return TRUE;
+		}
+		elem = elem->next;
+	}
+
+	return FALSE;
 }
