@@ -42,12 +42,8 @@ void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint16_t segme
  *	WearLeveling Algorithmus nach [TC11]
  *	Übergabeparameter ist eine Instanz von flash_t und der gerade gelöschte Block(BlockNr)
  */
-void wearLeveling(flash_t* flashDevice, uint32_t deletedBlockNr);
+void wearLeveling(flash_t* flashDevice, uint16_t deletedBlockNr);
 
-/*
- *	Berechnung der neuen Durchschnittswerte nach [TC11]
- */
-void averageRecalculation(flash_t* flashDevice);
 
 // Funktionen Garbage Collector
 ////////////////////////////////////////////////////////////////////
@@ -65,7 +61,7 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs);
 // Funktionsimplementation Wear-Leveler ([TC11]- Algorithmus)
 ////////////////////////////////////////////////////////////////////
 
-void wearLeveling(flash_t* flashDevice, uint32_t deletedBlockNr){
+void wearLeveling(flash_t* flashDevice, uint16_t deletedBlockNr){
 	uint16_t p, i;
 	//Average Recalculation gesamt
 	flashDevice->AVG += (1 / FL_getBlockCount());
