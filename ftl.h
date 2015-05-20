@@ -50,6 +50,7 @@ typedef enum
  */
 typedef struct Block_struct
 {
+	uint16_t writePos;
 	uint16_t deleteCounter;
 	uint16_t invalidCounter;
 	BlockStatus_t status;
@@ -69,9 +70,9 @@ typedef struct flash_struct
 	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
 	uint16_t invalidCounter;
-	uint16_t activeBlockPosition;	// Die stelle an der der akutelle Block beschrieben wird
 	uint16_t isNoErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
 	uint16_t freeBlocks;
+	uint16_t actWriteBlock;
  //	List_t* hotPool;
 //	List_t* coldPool;
 //	List_t* neutralPool;
