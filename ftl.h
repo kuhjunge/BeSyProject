@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "flashhardware.h"
-#include "list.h"
 
 // Allocator Konstanten
 #define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
@@ -55,6 +54,32 @@ typedef struct Block_struct
 	BlockStatus_t status;
 
 } Block_t;
+
+/*	Datenstruktur für ein Listenelement
+ *	prev Pointer auf vorheriges Element
+ *	next Pointer auf nächstes Element
+ *	blockNr Position des Blocks in flash_t.blockArray
+ */
+typedef struct ListElem {
+	struct ListElem* prev;
+	struct ListElem* next;
+	uint16_t blockNr;
+} ListElem_t;
+
+/*	Datenstruktur für die nach Anzahl der Löschvorgänge sortiere doppel verkettete Liste
+ *	first Pointer auf erstes Element
+ *	last Pointer auf letztes Element
+ *	AVG DurchschnittsLöschAnzahl
+ *	blockCounter Zähler der enthaltenen Blöcke
+ *	blockArray Pointer auf das verwendete Blockarray des ftl
+ */
+typedef struct {
+	ListElem_t* first;
+	ListElem_t* last;
+	uint32_t AVG;
+	uint32_t blockCounter;
+	Block_t* blockArray;
+} List_t;
 
 /*	Datenstruktur für den FTL 
  *	mappingTable Tabelle in der das Mapping gespeichert wird
@@ -135,6 +160,47 @@ uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
  * gibt die Struktur der flash_t Datenstruktur auf der Konsole aus
  */
 void printerr(flash_t *flashDevice);
+
+
+// PUBLIC Funktionen für List_t
+////////////////////////////////////////////////////////////////////
+/*
+ *	Initialisiere eine neue leere Liste und gebe diese zurück
+ *	Übergabeparameter ist ein Pointer auf das Blockarray des ftl
+ */
+List_t* initList(Block_t* blockArray);
+
+/*
+ *	Gebe allokierten Speicher dieser Liste zurück und gebe diese frei
+ */
+void freeList(List_t* list);
+
+/*
+ *	Füge eine BlockNr zu der Liste hinzu
+ */
+void addBlock(List_t* list, uint16_t blockNr);
+
+/*
+ *	Gebe den ersten Block(BlockNr) dieser Liste zurück
+ */
+uint16_t getFirstBlock(List_t* list);
+
+/*
+ *	Gebe den letzten Block(BlockNr) dieser Liste zurück
+ */ 
+uint16_t getLastBlock(List_t* list);
+
+/*
+ *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
+ */
+void recalculationAVG(List_t* list);
+
+/*
+ *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
+ *	und gibt TRUE, wenn enthalten und FALSE, wenn nicht
+ */
+uint8_t isElementOfList(List_t* list, uint16_t blockNr);
+
 
 #endif  /* __FTL__ */ 
 
