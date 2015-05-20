@@ -126,16 +126,7 @@ uint16_t getLastBlock(List_t* list){
 }
 
 void recalculationAVG(List_t* list){
-	ListElem_t* elem = list->first;
-	uint32_t counter = 0;
-
-	while(elem->next != NULL){
-		counter += list->blockArray[elem->blockNr].deleteCounter;
-		elem = elem->next;
-	}
-	
-	list->AVG = counter / list->blockCounter;
-
+	list->AVG += (1 / list->blockCounter);
 }
 
 uint8_t isElementOfList(List_t* list, uint16_t blockNr){

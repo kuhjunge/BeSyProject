@@ -65,33 +65,45 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs);
 // Funktionsimplementation Wear-Leveler ([TC11]- Algorithmus)
 ////////////////////////////////////////////////////////////////////
 
-void averageRecalculation(flash_t* flashDevice){
-	//Average Recalculation
-	/*
-	recalculationAVG( flashDevice->coldPool );
-	recalculationAVG( flashDevice->hotPool );
-	recalculationAVG( flashDevice->neutralPool );
-	flashDevice->AVG = ( flashDevice->neutralPool->AVG + flashDevice->coldPool->AVG + flashDevice->hotPool->AVG ) / BLOCK_COUNT;
-	*/
-}
-
 void wearLeveling(flash_t* flashDevice, uint32_t deletedBlockNr){
-	//Average Recalculation
-	averageRecalculation(flashDevice);
+	uint16_t p, i;
+	//Average Recalculation gesamt
+	flashDevice->AVG += (1 / FL_getBlockCount());
 
-	//erase operation in neutral pool?
-	/*
+	//erase operation in neutral pool?	
 	if( isElementOfList(flashDevice->neutralPool, deletedBlockNr) == TRUE){
-		//Average Recalculation
-		averageRecalculation(flashDevice);
+		//Average Recalculation Neutral
+		recalculationAVG( flashDevice->neutralPool );
 
 		//check condition 1 und 2
-		if(flashDevice->blockArray[deletedBlockNr].deleteCounter > flashDevice->AVG + THETA
-			|| flashDevice->blockArray[deletedBlockNr].deleteCounter < flashDevice->AVG - THETA){
-				//!!!!!!!!!
+		while(flashDevice->blockArray[flashDevice->neutralPool->last->blockNr].deleteCounter > flashDevice->AVG + THETA){
+			addBlock(flashDevice->hotPool, getLastBlock(flashDevice->neutralPool));
+		}
+		while(flashDevice->blockArray[flashDevice->neutralPool->first->blockNr].deleteCounter < flashDevice->AVG - THETA){
+			addBlock(flashDevice->coldPool, getFirstBlock(flashDevice->neutralPool));
 		}
 	}
-	*/
+	//erase operation in hot pool
+	if( isElementOfList(flashDevice->hotPool, deletedBlockNr) == TRUE){
+		//Average Recalculation Hot
+		recalculationAVG( flashDevice->hotPool );
+
+		//check condition 3
+		if(flashDevice->blockArray[deletedBlockNr].deleteCounter > flashDevice->hotPool->AVG + DELTA ){
+			//step 1 kopiere valide Segmente in tempBlock
+			uint8_t data[PAGES_PER_BLOCK*PAGE_DATASIZE/LOGICAL_BLOCK_DATASIZE];
+			for(p = 0; p < FL_getPagesPerBlock(); p++){
+				for(i = 0; i < FL_getPageDataSize()/LOGICAL_BLOCK_DATASIZE; i++){
+					if( segmentStatus(flashDevice, deletedBlockNr, (FL_getPagesPerBlock()*p)+i ) == assigned){
+						readBlockIntern( flashDevice, deletedBlockNr, p, i, &data[(FL_getPagesPerBlock()*p)+i ]);
+					}
+				}
+			}
+			//step 2 lösche Block und setze Zähler hoch
+			
+		}
+	}
+	
 }
 
 // Funktionen FTL lokal
@@ -183,7 +195,7 @@ void garbageCollector(flash_t *flashDevice){
 	uint16_t deleteCount = 0;
 	uint16_t level = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
 	uint32_t adress;
-	uint8_t temp[16];
+	uint8_t temp[LOGICAL_BLOCK_DATASIZE];
 	if (level < 1){
 		level = 1;
 	}
@@ -206,7 +218,7 @@ void garbageCollector(flash_t *flashDevice){
 			}
 			if (FL_deleteBlock(i) == TRUE){ // Wenn erfolgreich gelöscht
 				// wearLeveling Alg
-				//wearLeveling(flashDevice, i);
+				wearLeveling(flashDevice, i);
 				cleanBlock(flashDevice, i);
 				deleteCount++;
 			}
@@ -257,6 +269,7 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs){
 	if (bs != ready){
 		flashDevice->freeBlocks--;
 	}
+	// achtung! Diese Schleife findet nur ready nicht active!!!!
 	do
 	{
 		recentBlock++;
@@ -393,11 +406,15 @@ flash_t * mount(flashMem_t *flashHardware){
 		flde->blockArray[0].status = active;
 
 		// Initialisiere Pools
-		//flashDevice.hotPool = initList(flashDevice.blockArray);
-		//flashDevice.neutralPool = initList(flashDevice.blockArray);
-		//flashDevice.coldPool = initList(flashDevice.blockArray);
+		flashDevice.hotPool = initList(flashDevice.blockArray);
+		flashDevice.neutralPool = initList(flashDevice.blockArray);
+		flashDevice.coldPool = initList(flashDevice.blockArray);
 		// Initialisiere AVG
 		flashDevice.AVG = 0;
+		// befülle neutralPool
+		for(i = 0; i < FL_getBlockCount(); i++){
+			addBlock(flashDevice.neutralPool, i);
+		}
 
 		printf("SSD initialisiert!\n");
 

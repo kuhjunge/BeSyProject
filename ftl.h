@@ -99,9 +99,9 @@ typedef struct flash_struct
 	uint16_t isNoErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
 	uint16_t freeBlocks;
 	uint16_t actWriteBlock;
- //	List_t* hotPool;
-//	List_t* coldPool;
-//	List_t* neutralPool;
+ 	List_t* hotPool;
+	List_t* coldPool;
+	List_t* neutralPool;
 	uint32_t AVG;// globaler AVG
 } flash_t;
 
