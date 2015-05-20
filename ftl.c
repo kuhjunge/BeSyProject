@@ -254,7 +254,7 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs){
 	*/
 
 	flashDevice->blockArray[flashDevice->actWriteBlock].status = bs; // Setze alten Block auf neuen Status
-	if (bs != ready && bs != active){
+	if (bs != ready){
 		flashDevice->freeBlocks--;
 	}
 	do
