@@ -184,10 +184,11 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
-	overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
+	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
+
 
 }
