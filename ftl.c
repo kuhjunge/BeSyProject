@@ -35,6 +35,20 @@ StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint16_t se
  */
 void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint16_t segment);
 
+// Funktionen WearLeveling
+////////////////////////////////////////////////////////////////////
+
+/*
+ *	WearLeveling Algorithmus nach [TC11]
+ *	Übergabeparameter ist eine Instanz von flash_t und der gerade gelöschte Block(BlockNr)
+ */
+void wearLeveling(flash_t* flashDevice, uint32_t deletedBlockNr);
+
+/*
+ *	Berechnung der neuen Durchschnittswerte nach [TC11]
+ */
+void averageRecalculation(flash_t* flashDevice);
+
 // Funktionen Cleaner
 ////////////////////////////////////////////////////////////////////
 /*
@@ -49,6 +63,35 @@ void setFreeBlock(flash_t *flashDevice, BlockStatus_t bs);
 
 // Funktionsimplementation Wear-Leveler ([TC11]- Algorithmus)
 ////////////////////////////////////////////////////////////////////
+
+void averageRecalculation(flash_t* flashDevice){
+	//Average Recalculation
+	/*
+	recalculationAVG( flashDevice->coldPool );
+	recalculationAVG( flashDevice->hotPool );
+	recalculationAVG( flashDevice->neutralPool );
+	flashDevice->AVG = ( flashDevice->neutralPool->AVG + flashDevice->coldPool->AVG + flashDevice->hotPool->AVG ) / BLOCK_COUNT;
+	*/
+}
+
+void wearLeveling(flash_t* flashDevice, uint32_t deletedBlockNr){
+	//Average Recalculation
+	averageRecalculation(flashDevice);
+
+	//erase operation in neutral pool?
+	/*
+	if( isElementOfList(flashDevice->neutralPool, deletedBlockNr) == TRUE){
+		//Average Recalculation
+		averageRecalculation(flashDevice);
+
+		//check condition 1 und 2
+		if(flashDevice->blockArray[deletedBlockNr].deleteCounter > flashDevice->AVG + THETA
+			|| flashDevice->blockArray[deletedBlockNr].deleteCounter < flashDevice->AVG - THETA){
+				//!!!!!!!!!
+		}
+	}
+	*/
+}
 
 // Funktionen FTL lokal
 ////////////////////////////////////////////////////////////////////
@@ -161,6 +204,8 @@ void cleaner(flash_t *flashDevice){
 				//flashDevice->blockArray[i].segmentStatus[j] = empty; // Segemente auf unused setzen
 			}
 			if (FL_deleteBlock(i) == TRUE){ // Wenn erfolgreich gelöscht
+				// wearLeveling Alg
+				//wearLeveling(flashDevice, i);
 				flashDevice->invalidCounter = flashDevice->invalidCounter - flashDevice->blockArray[i].invalidCounter;
 				flashDevice->blockArray[i].deleteCounter++; // block löschzähler hochsetzten
 				flashDevice->blockArray[i].invalidCounter = 0; // Counter zurück setzen
@@ -330,6 +375,13 @@ flash_t * mount(flashMem_t *flashHardware){
 		flashDevice.freeBlocks = FL_getBlockCount();
 		flde = &flashDevice;
 		flde->blockArray[0].status = active; 
+		// Initialisiere Pools
+		//flashDevice.hotPool = initList(flashDevice.blockArray);
+		//flashDevice.neutralPool = initList(flashDevice.blockArray);
+		//flashDevice.coldPool = initList(flashDevice.blockArray);
+		// Initialisiere AVG
+		flashDevice.AVG = 0;
+
 		printf("SSD initialisiert!\n");
 
 		//setFreeBlock(flde, flde->blockArray[flde->activeBlockPosition / FL_getBlockCount()].status); // Freien Block finden und nutzen
