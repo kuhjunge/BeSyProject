@@ -1,4 +1,4 @@
-#include "list.h"
+#include "ftl.h"
 
 // Lokale Funktionsimplementation List
 ////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ void addBlock(List_t* list, uint16_t blockNr){
 	}
 }
 
-uint32_t getFirstBlock(List_t* list){
+uint16_t getFirstBlock(List_t* list){
 	ListElem_t* elem = list->first;
 	uint16_t blockNr = 0;
 
@@ -75,7 +75,7 @@ uint32_t getFirstBlock(List_t* list){
 	}
 	// list ist leer
 	if(list->blockCounter == 0){				
-		return NULL;
+		return -1;
 	}
 	if(list->blockCounter >= 2){
 		list->blockCounter--;
@@ -92,7 +92,7 @@ uint32_t getFirstBlock(List_t* list){
 	return blockNr;	
 }
 
-uint32_t getLastBlock(List_t* list){
+uint16_t getLastBlock(List_t* list){
 	ListElem_t* elem = list->last;
 	uint16_t blockNr = 0;
 
@@ -108,7 +108,7 @@ uint32_t getLastBlock(List_t* list){
 	}
 	// list ist leer
 	if(list->blockCounter == 0){				
-		return NULL;
+		return -1;
 	}
 	if(list->blockCounter >= 2){
 		list->blockCounter--;
@@ -138,7 +138,7 @@ void recalculationAVG(List_t* list){
 
 }
 
-bool isElementOfList(List_t* list, uint32_t blockNr){
+uint8_t isElementOfList(List_t* list, uint16_t blockNr){
 	ListElem_t* elem = list->first;	
 
 	while(elem->next != NULL){
