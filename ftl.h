@@ -11,14 +11,13 @@
 // Allocator Konstanten
 #define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
 #define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
-#define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							// TODO: Ist es in Ordnung Konstanten bei der Definition der Konstanten zu verwenden?
+#define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
 // Cleaner Konstanten
 #define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
 #define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks zusätzlich zum active Block
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
-#define THETA 12																	// Definiert die Größe des neutralen Pools	
-#define DELTA 5																		// Definiert den Bereich für BlockNeutralisationen
-// ToDo 
+#define THETA 50																	// Definiert die Größe des neutralen Pools	
+#define DELTA 25																	// Definiert den Bereich für BlockNeutralisationen
 
 /*	Zustände für die physikalische Liste							
  *	empty =  Speicherzelle benutzt						
@@ -35,6 +34,7 @@ typedef enum
  *	ready =  Block ist bereit um beschrieben zu werden (oder wird gerade beschrieben)
  *	used =  Block beschrieben
  *	badBlock =  Block defekt
+ *	TODO active Erläuterung ergänzen!
  */
 typedef enum
 {
@@ -79,7 +79,7 @@ typedef struct {
 	ListElem_t* first;
 	ListElem_t* last;
 	uint32_t AVG;
-	uint32_t blockCounter;
+	uint16_t blockCounter;
 	Block_t* blockArray;
 } List_t;
 
@@ -88,20 +88,20 @@ typedef struct {
  *  blockArray Array mit Block Datenstruktur zur Verwaltung der Blöcke-> Siehe Block_t
  *  invalidCounter Zählt die invaliden Segmente im gesammten FTL
  *  activeBlockPosition Aktuelle Schreibposition
- *  isErr ?????
  *  freeBlocks Anzahl der freien Blocks die zum Schreibzugriff zur verfügung stehen
+ *	TODO Kommentare zu List_t ergänzen
  */
 typedef struct flash_struct
 {
 	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
-	uint16_t invalidCounter;
-	uint16_t isNoErr; // Information für Unmount um Fehler zurück zu geben [kann weg ?]
+	uint16_t invalidCounter;	
 	uint16_t freeBlocks;
 	uint16_t actWriteBlock;
  	List_t* hotPool;
 	List_t* coldPool;
 	List_t* neutralPool;
+	List_t* writePool;
 	uint32_t AVG;// globaler AVG
 } flash_t;
 
@@ -163,8 +163,7 @@ uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
  */
 void printerr(flash_t *flashDevice);
 
-
-// PUBLIC Funktionen für List_t
+// Public Funktionen für List_t
 ////////////////////////////////////////////////////////////////////
 /*
  *	Initialisiere eine neue leere Liste und gebe diese zurück
@@ -184,11 +183,13 @@ void addBlock(List_t* list, uint16_t blockNr);
 
 /*
  *	Gebe den ersten Block(BlockNr) dieser Liste zurück
+ *	und entferne aus Liste
  */
 uint16_t getFirstBlock(List_t* list);
 
 /*
  *	Gebe den letzten Block(BlockNr) dieser Liste zurück
+ *	und entferne aus Liste
  */ 
 uint16_t getLastBlock(List_t* list);
 
@@ -202,6 +203,33 @@ void recalculationAVG(List_t* list);
  *	und gibt TRUE, wenn enthalten und FALSE, wenn nicht
  */
 uint8_t isElementOfList(List_t* list, uint16_t blockNr);
+
+/*
+ *	Gibt die BlockNr des ersten Blocks zurück
+ *	-1, wenn es keinen ersten Block gibt
+ */
+uint16_t showFirstBlock(List_t* list);
+
+/*
+ *	Gibt die BlockNr des letzten Blocks zurück
+ *	-1, wenn es keinen letzten Block gibt
+ */
+uint16_t showLastBlock(List_t* list);
+
+/*
+ *	Gibt die Länge der Liste zurück
+ */
+uint16_t listLength(List_t* list);
+
+/*
+ *	Gibt für ein übergebendes Element den Vorgänger zurück
+ */
+ListElem_t* getPrevElement(ListElem_t* elem);
+
+/*
+ *	Gibt für ein übergebendes Element den Vorgänger zurück
+ */
+ListElem_t* getNextElement(ListElem_t* elem);
 
 
 #endif  /* __FTL__ */ 

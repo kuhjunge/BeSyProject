@@ -3,7 +3,7 @@
 // Lokale Funktionsimplementation List
 ////////////////////////////////////////////////////////////////////
 List_t* initList(Block_t* blockArray){
-	List_t* list = (List_t*)malloc(sizeof(List_t*));
+	List_t* list = (List_t*)malloc(sizeof(List_t));
 	list->AVG = 0;
 	list->blockArray = blockArray;
 	list->blockCounter = 0;
@@ -140,4 +140,35 @@ uint8_t isElementOfList(List_t* list, uint16_t blockNr){
 	}
 
 	return FALSE;
+}
+
+uint16_t showFirstBlock(List_t* list){
+	if(list->first == NULL){
+		return -1;
+	}
+	else{
+		return list->first->blockNr;
+	}
+}
+
+uint16_t showLastBlock(List_t* list){
+	if(list->last == NULL){
+		return -1;
+	}
+	else{
+		return list->last->blockNr;
+	}
+}
+
+uint16_t listLength(List_t* list){
+	return list->blockCounter;
+}
+
+
+ListElem_t* getPrevElement(ListElem_t* elem){
+	return elem->prev;	
+}
+
+ListElem_t* getNextElement(ListElem_t* elem){
+	return elem->next;	
 }
