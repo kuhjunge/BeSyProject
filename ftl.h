@@ -13,15 +13,15 @@
 #define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
 // Cleaner Konstanten
-#define START_CLEANING 2															// Anzahl ab der der Cleaning Algorithmus gestartet wird
+#define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
 #define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks zusätzlich zum active Block
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
-#define THETA 50																	// Definiert die Größe des neutralen Pools	
-#define DELTA 25																	// Definiert den Bereich für BlockNeutralisationen
+#define THETA 5																	// Definiert die Größe des neutralen Pools	
+#define DELTA 4																	// Definiert den Bereich für BlockNeutralisationen
 
 /*	Zustände für die physikalische Liste							
- *	empty =  Speicherzelle benutzt						
- *	assigned =  Speicherzelle beschreibbar						
+ *	empty =  Speicherzelle beschreibbar						
+ *	assigned =  Speicherzelle benutzt						
  *	invalid =  Speicherzelle nicht meht gültig
  */
 typedef enum
@@ -49,9 +49,9 @@ typedef enum
  */
 typedef struct Block_struct
 {
-	uint16_t writePos;
-	uint16_t deleteCounter;
-	uint16_t invalidCounter;
+	int32_t writePos;
+	int32_t deleteCounter;
+	int32_t invalidCounter;
 	BlockStatus_t status;
 
 } Block_t;
@@ -64,7 +64,7 @@ typedef struct Block_struct
 typedef struct ListElem {
 	struct ListElem* prev;
 	struct ListElem* next;
-	uint16_t blockNr;
+	int32_t blockNr;
 } ListElem_t;
 
 /*	Datenstruktur für die nach Anzahl der Löschvorgänge sortiere doppel verkettete Liste
@@ -77,8 +77,8 @@ typedef struct ListElem {
 typedef struct {
 	ListElem_t* first;
 	ListElem_t* last;
-	uint32_t AVG;
-	uint16_t blockCounter;
+	double AVG;
+	int32_t blockCounter;
 	Block_t* blockArray;
 } List_t;
 
@@ -92,16 +92,16 @@ typedef struct {
  */
 typedef struct flash_struct
 {
-	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
+	int32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
-	uint16_t invalidCounter;	
-	uint16_t freeBlocks;
-	uint16_t actWriteBlock;
+	int32_t invalidCounter;	
+	int32_t freeBlocks;
+	int32_t actWriteBlock;
  	List_t* hotPool;
 	List_t* coldPool;
 	List_t* neutralPool;
 	List_t* writePool;
-	uint32_t AVG;// globaler AVG
+	double AVG;// globaler AVG
 } flash_t;
 
 // PUBLIC Funktionen
@@ -141,7 +141,7 @@ flash_t *unmount(flash_t *flashDevice);
  * Daten kopiert werden.
  * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
  */
-uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data);
+uint8_t readBlock(flash_t *flashDevice, int32_t index, uint8_t *data);
 
 /*
  * Schreibt einen Datenblock an der angegebene Indexposition auf den Flashspeicher, der
@@ -152,7 +152,7 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data);
  * data ist ein Pointer auf den Quelldatenblock.
  * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
  */
-uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
+uint8_t writeBlock(flash_t *flashDevice,int32_t index, uint8_t *data);
 
 // PUBLIC DEBUG Funktionen
 ////////////////////////////////////////////////////////////////////
@@ -178,47 +178,49 @@ void freeList(List_t* list);
 /*
  *	Füge eine BlockNr zu der Liste hinzu
  */
-void addBlock(List_t* list, uint16_t blockNr);
+void addBlock(List_t* list, int32_t blockNr);
 
 /*
  *	Gebe den ersten Block(BlockNr) dieser Liste zurück
  *	und entferne aus Liste
  */
-uint16_t getFirstBlock(List_t* list);
+int32_t getFirstBlock(List_t* list);
 
 /*
  *	Gebe den letzten Block(BlockNr) dieser Liste zurück
  *	und entferne aus Liste
  */ 
-uint16_t getLastBlock(List_t* list);
+int32_t getLastBlock(List_t* list);
 
 /*
  *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
  */
 void recalculationAVG(List_t* list);
 
+void calculateAVG(List_t* list, int32_t deleteCounter, uint8_t plus);
+
 /*
  *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
  *	und gibt TRUE, wenn enthalten und FALSE, wenn nicht
  */
-uint8_t isElementOfList(List_t* list, uint16_t blockNr);
+uint8_t isElementOfList(List_t* list, int32_t blockNr);
 
 /*
  *	Gibt die BlockNr des ersten Blocks zurück
  *	-1, wenn es keinen ersten Block gibt
  */
-uint16_t showFirstBlock(List_t* list);
+int32_t showFirstBlock(List_t* list);
 
 /*
  *	Gibt die BlockNr des letzten Blocks zurück
  *	-1, wenn es keinen letzten Block gibt
  */
-uint16_t showLastBlock(List_t* list);
+int32_t showLastBlock(List_t* list);
 
 /*
  *	Gibt die Länge der Liste zurück
  */
-uint16_t listLength(List_t* list);
+int32_t listLength(List_t* list);
 
 /*
  *	Gibt für ein übergebendes Element den Vorgänger zurück
@@ -230,6 +232,10 @@ ListElem_t* getPrevElement(ListElem_t* elem);
  */
 ListElem_t* getNextElement(ListElem_t* elem);
 
+/*
+ *	Gibt diese Liste auf dem Screen aus
+ */
+void printList(List_t* list);
 
 #endif  /* __FTL__ */ 
 

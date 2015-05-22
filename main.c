@@ -4,7 +4,7 @@
 
 flash_t* ssd;
 flashMem_t flMe;
-#define TEST_COUNT 10000
+#define TEST_COUNT 20000
 
 uint8_t myData[16], myRetData[16];
 uint16_t count;
@@ -46,6 +46,32 @@ void writeData(int start, int amount, int rnd, int tc){
 	}
 }
 
+void test_write_one_logicalBlock(){
+	int i;
+	int j;
+	uint32_t r;
+	int k = 0;
+
+	printf("Mount \n");
+	FL_resetFlash(); // Start der Simulation
+	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
+
+	for (i = 0; i < 16; i++)
+		myData[i] = (uint8_t)(i + 65);
+
+	for(i = 0; i < TEST_COUNT; i++){
+		writeBlock(ssd, 0, myData);
+	}
+
+	printf("Unmount\n");
+	ssd = unmount(ssd);
+	printerr(ssd);
+	printf("test_write_one_logicalBlock() beendet");
+}
 void load_test_Random_Full(){
 
 	printf("Mount \n");
@@ -101,7 +127,7 @@ void mount_test_Light(){
 void load_test_Random_Light(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
+	ssd = mount(&flMe); 
 	if (ssd == NULL){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
@@ -178,13 +204,16 @@ void mapping_test(){
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
+	//schreibe wiederholt einen Block
+	test_write_one_logicalBlock(); 
+
 	//mount_test_Light();
 
 	//load_test_Random_Light(); // Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
