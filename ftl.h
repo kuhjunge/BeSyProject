@@ -13,7 +13,7 @@
 #define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
 // Cleaner Konstanten
-#define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
+#define START_CLEANING 2															// Anzahl ab der der Cleaning Algorithmus gestartet wird
 #define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks zusätzlich zum active Block
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 #define THETA 50																	// Definiert die Größe des neutralen Pools	
@@ -34,11 +34,10 @@ typedef enum
  *	ready =  Block ist bereit um beschrieben zu werden (oder wird gerade beschrieben)
  *	used =  Block beschrieben
  *	badBlock =  Block defekt
- *	TODO active Erläuterung ergänzen!
  */
 typedef enum
 {
-	ready, used, badBlock, active
+	ready, used, badBlock
 
 } BlockStatus_t;
 
