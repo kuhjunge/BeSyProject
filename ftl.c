@@ -144,6 +144,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 					readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 					mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
+					setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i,0);
 					data_position++;
 				}
 			}
@@ -213,6 +214,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
+						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
 						data_position++;
 					}
 				}
@@ -239,6 +241,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 						// Werden hier die Mapping Daten benötigt, bzw müssen zurück geschrieben werden?
 						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i); 
+						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
 						data_position++;
 					}
 				}
@@ -285,6 +288,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
+						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
 						data_position++;
 					}
 				}
@@ -510,14 +514,6 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, ui
 		}*/
 	printf("Index! %i (%i/%i/%i) \n" , index, block, page, bp_index);
 	setMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index, index); // Setze Mapeintrag
-	//flashDevice->blockArray[block].segmentStatus[(page * FL_getPagesPerBlock()) + bp_index] = assigned; // Beschriebenes Segement merken
-	readBlock(flashDevice, index, data);
-	if (!(index == getMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index)) || (data[0] != 'A')){
-		printf("Fehler! 1");
-		printerr(flashDevice);
-		printf("Fehler! 1");
-		//return FALSE;
-	}
 	// Auswahl des nächsten Schreibortes
 	if (flashDevice->blockArray[flashDevice->actWriteBlock].writePos < BLOCKSEGMENTS - 1){ // position weiterzählen wenn innerhalb des selben blockes
 		flashDevice->blockArray[flashDevice->actWriteBlock].writePos++;
@@ -536,6 +532,7 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, ui
 			return FALSE;
 		}
 	}
+	// Überprüfung auf fehler 
 	readBlock(flashDevice, index, data);
 	if (!(index == getMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index)) || (data[0] != 'A')){
 		printf("Fehler! 1");
