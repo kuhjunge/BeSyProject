@@ -1,6 +1,9 @@
 #ifndef __FTL_STRUCT__
 #define __FTL_STRUCT__
 
+/*
+TODO: Die MAPPING_TABLE_SIZE und BLOCKSEGMENTS dürfen nicht auf Konstanten aus der Aufgabenstellung basieren und müssen deshalb geändert werden (alloc & lokale Variablen)
+*/
 // Allocator Konstanten
 #define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
 #define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
