@@ -488,16 +488,9 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, ui
 
 	// Der Block auf dem geschrieben wird, ist nicht beschreibbar
 	if (flashDevice->blockArray[block].status != ready){ 
-		printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff! Versuche zu korrigieren!\n");
-		nextBlock(flashDevice); // Freien Block finden und nutzen
-		if (flashDevice->blockArray[flashDevice->actWriteBlock].status != ready){
 			printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff!\n");
 			printerr(flashDevice);
 			return FALSE;
-		}
-		else {
-			return writeBlockIntern(flashDevice, index, data, useSpare);
-		}
 	}
 	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
 	if (count != LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten geschrieben wurden		}
