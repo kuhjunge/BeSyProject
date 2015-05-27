@@ -48,8 +48,6 @@ void writeData(int start, int amount, int rnd, int tc){
 
 void test_write_one_logicalBlock(){
 	int i;
-	int j;
-	uint32_t r;
 	int k = 0;
 
 	printf("Mount \n");
@@ -205,7 +203,7 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//schreibe wiederholt einen Block
-	test_write_one_logicalBlock(); 
+	//test_write_one_logicalBlock(); 
 
 	//mount_test_Light();
 
@@ -213,7 +211,7 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 

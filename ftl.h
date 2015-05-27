@@ -1,108 +1,13 @@
 #ifndef __FTL__
 #define __FTL__
 
-#include "types.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "flashhardware.h"
-//#include "list.h"
-
-// Allocator Konstanten
-#define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
-#define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
-#define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
-// Cleaner Konstanten
-#define START_CLEANING 3															// Anzahl ab der der Cleaning Algorithmus gestartet wird
-#define SPARE_BLOCKS 1																// Anzahl der Reserve Blocks zusätzlich zum active Block
-// Wear-Leveler ([TC11]- Algorithmus) Konstanten
-#define THETA 5																	// Definiert die Größe des neutralen Pools	
-#define DELTA 4																	// Definiert den Bereich für BlockNeutralisationen
-
-/*	Zustände für die physikalische Liste							
- *	empty =  Speicherzelle beschreibbar						
- *	assigned =  Speicherzelle benutzt						
- *	invalid =  Speicherzelle nicht meht gültig
- */
-typedef enum
-{
-	empty, assigned, invalid
-
-} StatusPageElem_t;
-
-/*	Zustände für die Blockverwaltung
- *	ready =  Block ist bereit um beschrieben zu werden (oder wird gerade beschrieben)
- *	used =  Block beschrieben
- *	badBlock =  Block defekt
- */
-typedef enum
-{
-	ready, used, badBlock
-
-} BlockStatus_t;
-
-/*	Datenstruktur für die Blockverwaltung
- *	segmentStatus Array mit den Status der einzelnen segmente eines Blocks
- *  deleteCounter hält fest wie oft der Block gelöscht wurde
- *  invalidCounter hält fest wie viele Segmente in diesem Block invalid markiert sind
- *  status hält die Status des Blockes fest -> [BlockStatus_t]
- */
-typedef struct Block_struct
-{
-	int32_t writePos;
-	int32_t deleteCounter;
-	int32_t invalidCounter;
-	BlockStatus_t status;
-
-} Block_t;
-
-/*	Datenstruktur für ein Listenelement
- *	prev Pointer auf vorheriges Element
- *	next Pointer auf nächstes Element
- *	blockNr Position des Blocks in flash_t.blockArray
- */
-typedef struct ListElem {
-	struct ListElem* prev;
-	struct ListElem* next;
-	int32_t blockNr;
-} ListElem_t;
-
-/*	Datenstruktur für die nach Anzahl der Löschvorgänge sortiere doppel verkettete Liste
- *	first Pointer auf erstes Element
- *	last Pointer auf letztes Element
- *	AVG DurchschnittsLöschAnzahl
- *	blockCounter Zähler der enthaltenen Blöcke
- *	blockArray Pointer auf das verwendete Blockarray des ftl
- */
-typedef struct {
-	ListElem_t* first;
-	ListElem_t* last;
-	double AVG;
-	int32_t blockCounter;
-	Block_t* blockArray;
-} List_t;
-
-/*	Datenstruktur für den FTL 
- *	mappingTable Tabelle in der das Mapping gespeichert wird
- *  blockArray Array mit Block Datenstruktur zur Verwaltung der Blöcke-> Siehe Block_t
- *  invalidCounter Zählt die invaliden Segmente im gesammten FTL
- *  activeBlockPosition Aktuelle Schreibposition
- *  freeBlocks Anzahl der freien Blocks die zum Schreibzugriff zur verfügung stehen
- *	TODO Kommentare zu List_t ergänzen
- */
-typedef struct flash_struct
-{
-	int32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
-	Block_t blockArray [BLOCK_COUNT]; // Block Verwaltungsstruktur
-	int32_t invalidCounter;	
-	int32_t freeBlocks;
-	int32_t actWriteBlock;
- 	List_t* hotPool;
-	List_t* coldPool;
-	List_t* neutralPool;
-	List_t* writePool;
-	double AVG;// globaler AVG
-} flash_t;
+#include "list.h"
+#include "types.h"
+#include "ftl_structs.h"
 
 // PUBLIC Funktionen
 ////////////////////////////////////////////////////////////////////
@@ -141,7 +46,7 @@ flash_t *unmount(flash_t *flashDevice);
  * Daten kopiert werden.
  * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
  */
-uint8_t readBlock(flash_t *flashDevice, int32_t index, uint8_t *data);
+uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data);
 
 /*
  * Schreibt einen Datenblock an der angegebene Indexposition auf den Flashspeicher, der
@@ -152,7 +57,7 @@ uint8_t readBlock(flash_t *flashDevice, int32_t index, uint8_t *data);
  * data ist ein Pointer auf den Quelldatenblock.
  * Der Rückgabewert ist als Boolescher Wert zu interpretieren.
  */
-uint8_t writeBlock(flash_t *flashDevice,int32_t index, uint8_t *data);
+uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
 
 // PUBLIC DEBUG Funktionen
 ////////////////////////////////////////////////////////////////////
@@ -161,81 +66,6 @@ uint8_t writeBlock(flash_t *flashDevice,int32_t index, uint8_t *data);
  * gibt die Struktur der flash_t Datenstruktur auf der Konsole aus
  */
 void printerr(flash_t *flashDevice);
-
-// Public Funktionen für List_t
-////////////////////////////////////////////////////////////////////
-/*
- *	Initialisiere eine neue leere Liste und gebe diese zurück
- *	Übergabeparameter ist ein Pointer auf das Blockarray des ftl
- */
-List_t* initList(Block_t* blockArray);
-
-/*
- *	Gebe allokierten Speicher dieser Liste zurück und gebe diese frei
- */
-void freeList(List_t* list);
-
-/*
- *	Füge eine BlockNr zu der Liste hinzu
- */
-void addBlock(List_t* list, int32_t blockNr);
-
-/*
- *	Gebe den ersten Block(BlockNr) dieser Liste zurück
- *	und entferne aus Liste
- */
-int32_t getFirstBlock(List_t* list);
-
-/*
- *	Gebe den letzten Block(BlockNr) dieser Liste zurück
- *	und entferne aus Liste
- */ 
-int32_t getLastBlock(List_t* list);
-
-/*
- *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
- */
-void recalculationAVG(List_t* list);
-
-void calculateAVG(List_t* list, int32_t deleteCounter, uint8_t plus);
-
-/*
- *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
- *	und gibt TRUE, wenn enthalten und FALSE, wenn nicht
- */
-uint8_t isElementOfList(List_t* list, int32_t blockNr);
-
-/*
- *	Gibt die BlockNr des ersten Blocks zurück
- *	-1, wenn es keinen ersten Block gibt
- */
-int32_t showFirstBlock(List_t* list);
-
-/*
- *	Gibt die BlockNr des letzten Blocks zurück
- *	-1, wenn es keinen letzten Block gibt
- */
-int32_t showLastBlock(List_t* list);
-
-/*
- *	Gibt die Länge der Liste zurück
- */
-int32_t listLength(List_t* list);
-
-/*
- *	Gibt für ein übergebendes Element den Vorgänger zurück
- */
-ListElem_t* getPrevElement(ListElem_t* elem);
-
-/*
- *	Gibt für ein übergebendes Element den Vorgänger zurück
- */
-ListElem_t* getNextElement(ListElem_t* elem);
-
-/*
- *	Gibt diese Liste auf dem Screen aus
- */
-void printList(List_t* list);
 
 #endif  /* __FTL__ */ 
 
