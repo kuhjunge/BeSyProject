@@ -143,13 +143,14 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 			for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
 				if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 					readBlockIntern(flashDevice, deletedBlock, p, i, data[(FL_getPagesPerBlock()*p) + i]);
+					mappingData[i] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
 					data_position++;
 				}
 			}
 		}
 		cleanBlock(flashDevice, deletedBlock);
 		for (i = 0; i < data_position; i++){
-			//writeIntern(flashDevice, data[i], -1); //  TODO Frage Chris an Simon : Was Soll das ? warum -1 ?
+			writeBlockIntern(flashDevice, mappingData[i], data[i], TRUE);
 		}
 
 		return;
@@ -358,6 +359,7 @@ void garbageCollector(flash_t *flashDevice){
 	if (level < 1){
 		level = 1;
 	}*/
+	// TODO Konstante für 5 einfügen (wie viel freigeräumt werden sollen)
 	while (deleteCount < 5 && k < FL_getBlockCount () ){ // Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden
 		if (/*flashDevice->blockArray[i].invalidCounter >= level && */flashDevice->blockArray[i].status != badBlock){ // Wenn Block über Schwellwert liegt und benutzt wird
 			deleteCount++;
