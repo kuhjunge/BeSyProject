@@ -381,7 +381,7 @@ void cleanBlock(flash_t *flashDevice, uint32_t block){
 	//TODO BadBlock-Behandlung einbauen
 	//Adressen löschen
 	for(i = 0; i < BLOCKSEGMENTS; i++){
-		setMapT(flashDevice, block, i, -1);
+		setMapT(flashDevice, block, i, 0);
 	}
 }
 
