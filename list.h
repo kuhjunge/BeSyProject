@@ -28,16 +28,16 @@ void addBlock(List_t* list, uint32_t blockNr);
 uint8_t delBlock(List_t* list, uint32_t blockNr);
 
 /*
-*	Gebe den ersten Block(BlockNr) dieser Liste zurück
+*	Gebe das Element dieser Liste zurück
 *	und entferne aus Liste
 */
-uint32_t getFirstBlock(List_t* list);
+ListElem_t* getFirstElement(List_t* list);
 
 /*
-*	Gebe den letzten Block(BlockNr) dieser Liste zurück
+*	Gebe das letzte Element dieser Liste zurück
 *	und entferne aus Liste
 */
-uint32_t getLastBlock(List_t* list);
+ListElem_t* getLastElement(List_t* list);
 
 /*
 *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
@@ -53,30 +53,28 @@ void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus);
 uint8_t isElementOfList(List_t* list, uint32_t blockNr);
 
 /*
-*	Gibt die BlockNr des ersten Blocks zurück
-*	-1, wenn es keinen ersten Block gibt
+*	Zeigt das erste Element der Liste an, aber löscht es nicht
 */
-uint32_t showFirstBlock(List_t* list);
+ListElem_t* showFirstElement(List_t* list);
 
 /*
-*	Gibt die BlockNr des letzten Blocks zurück
-*	-1, wenn es keinen letzten Block gibt
-*/
-uint32_t showLastBlock(List_t* list);
+ *	Zeigt das letzte Element der Liste an, aber löscht es nicht
+ */
+ListElem_t* showLastElement(List_t* list);
 
 /*
-*	Gibt die Länge der Liste zurück
-*/
+ *	Gibt die Länge der Liste zurück
+ */
 uint32_t listLength(List_t* list);
 
 /*
-*	Gibt für ein übergebendes Element den Vorgänger zurück
-*/
+ *	Gibt für ein übergebendes Element den Vorgänger zurück
+ */
 ListElem_t* getPrevElement(ListElem_t* elem);
 
 /*
-*	Gibt für ein übergebendes Element den Vorgänger zurück
-*/
+ *	Gibt für ein übergebendes Element den Vorgänger zurück
+ */
 ListElem_t* getNextElement(ListElem_t* elem);
 
 /*

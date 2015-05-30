@@ -4,7 +4,7 @@
 
 flash_t* ssd;
 flashMem_t flMe;
-#define TEST_COUNT 100000
+#define TEST_COUNT 20000
 
 uint8_t myData[16], myRetData[16];
 uint16_t count;
@@ -46,6 +46,38 @@ void writeData(int start, int amount, int rnd, int tc){
 	}
 }
 
+void test_write_n_locigalBlocks(int value){
+	int i;
+	int k = 0;
+
+	printf("Mount \n");
+	FL_resetFlash(); // Start der Simulation
+	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
+
+	for (i = 0; i < 16; i++)
+		myData[i] = (uint8_t)(i + 65);
+
+	for(i = 0; i < TEST_COUNT/value; i++){
+		for(k = 1; k <= value; k++){
+			writeBlock(ssd, k, myData);
+			readBlock(ssd, k,myRetData);
+			if(myData[0] != myRetData[0]){
+				printf("Fehler beim Lesen\n");
+			}
+		}
+	}
+
+	printf("Unmount\n");
+	ssd = unmount(ssd);
+	printerr(ssd);
+	printf("test_write_n_logicalBlocks() beendet");
+}
+
+
 void test_write_one_logicalBlock(){
 	int i;
 	int k = 0;
@@ -63,6 +95,10 @@ void test_write_one_logicalBlock(){
 
 	for(i = 0; i < TEST_COUNT; i++){
 		writeBlock(ssd, 1, myData);
+		readBlock(ssd, 1, myRetData);
+		if(myData[0] != myRetData[0]){
+			printf("Fehler beim Lesen\n");
+		}
 	}
 
 	printf("Unmount\n");
@@ -96,7 +132,7 @@ void overload_test_Random(){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-	writeData(0, 496, 0, 496);
+	writeData(0, 480, 0, 480);
 
 	printf("Unmount\n");
 	ssd = unmount(ssd);
@@ -172,9 +208,11 @@ void mapping_test(){
 		return;
 	}
 	printf("Write Prev\n");
-	writeData(0, 480, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben
-	printf("Write\n"); // Sortiertes Schreiben
+	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben		
+	//writeData(0, 432, 1, TEST_COUNT); // Speicher vorbeschreiben		
+	printf("Write\n"); // Sortiertes Schreiben	
 	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){
+	//for (i = 1; i < 432 ; i++){
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
 			checkvalue = (uint8_t)((i * j) % 255);
 			myData[j] = checkvalue;
@@ -183,7 +221,7 @@ void mapping_test(){
 	}
 	printf("Read\n"); // Sortiertes lesen
 	for (i = 1; i <= (BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS -1 ; i++){
-
+	//for (i = 1; i < 432 ; i++){
 		readBlock(ssd, i, myRetData);
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
 			checkvalue = (uint8_t)((i * j) % 255);
@@ -203,11 +241,17 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//schreibe wiederholt einen Block
-	test_write_one_logicalBlock(); 
+	//test_write_one_logicalBlock(); 
+
+	//schreibe wiederholt verschiedene Datensätze	
+	// 1 bis maximal 432 => 5 Blöcke Spare
+	test_write_n_locigalBlocks( 480 );	
+	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//mount_test_Light();
 
-	//load_test_Random_Light(); // Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
+	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
+	//load_test_Random_Light(); 
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 

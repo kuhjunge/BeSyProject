@@ -12,7 +12,7 @@ TODO: Die MAPPING_TABLE_SIZE und BLOCKSEGMENTS dürfen nicht auf Konstanten aus d
 #define SPARE_BLOCKS 2																// Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 #define THETA 5																	// Definiert die Größe des neutralen Pools	
-#define DELTA 5																// Definiert den Bereich für BlockNeutralisationen
+#define DELTA 2																// Definiert den Bereich für BlockNeutralisationen
 
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
