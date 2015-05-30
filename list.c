@@ -20,9 +20,84 @@ void freeList(List_t* list){
 	free(list);
 }
 
+void addElement(List_t* list, ListElem_t* element){	
+	ListElem_t* posElem;// Pointer auf aktuelles Element	
+
+	//Fehlerfall
+	if(element == NULL){				
+		return;
+	}
+
+	if(list->blockCounter == 0){//erster Block wird hinzugefügt		
+		element->next = NULL;
+		element->prev = NULL;
+		list->first = element;
+		list->last = element;
+		list->blockCounter++;
+		list->AVG = 0;
+		return;
+	}
+	// es ist ein Block schon in Liste enthalten		
+	if(list->blockCounter == 1){
+		element->prev = NULL;
+		element->next = NULL;
+		posElem = list->first;
+		if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
+			element->next = list->first;
+			list->first->prev = element;
+			list->first = element;
+		}		
+		else{
+			element->prev = list->last;
+			list->last->next = element;
+			list->last = element;
+		}
+
+		//recalc AVG
+		list->AVG = (double) list->AVG * list->blockCounter;
+		list->blockCounter++;
+		list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
+		return;
+	}
+	// es sind mehr als ein Block schon in Liste enthalten		
+	else{
+		element->next = NULL;
+		element->prev = NULL;		
+		//recalc AVG
+		list->AVG = (double) list->AVG * list->blockCounter;
+		list->blockCounter++;
+		list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
+
+		//Einfügen am Anfang
+		posElem = list->first;
+		if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
+			element->next = list->first;
+			list->first->prev = element;
+			list->first = element;
+			return;
+		}		
+
+		//Einfügen in Mitte
+		for(posElem = posElem->next; posElem != NULL; posElem = posElem->next){
+			if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
+				element->next = posElem;
+				element->prev = posElem->prev;
+				posElem->prev->next = element;
+				posElem->prev = element;
+				return;
+			}
+		}
+				
+		//Einfügen am Ende
+		element->prev = list->last;
+		list->last->next = element;
+		list->last = element;		
+	}
+}
+
 void addBlock(List_t* list, uint32_t blockNr){
 	ListElem_t* elem = (ListElem_t*)malloc(sizeof(ListElem_t));//Erzeuge neues Element
-	ListElem_t* posElem;// Pointer auf aktuelles Element	
+	ListElem_t* posElem = NULL;// Pointer auf aktuelles Element	
 
 	//Fehlerfall
 	if(blockNr < 0){		
@@ -30,45 +105,9 @@ void addBlock(List_t* list, uint32_t blockNr){
 		return;
 	}
 
-	if(list->blockCounter == 0){//erster Block wird hinzugefügt
-		elem->blockNr = blockNr;
-		elem->next = NULL;
-		elem->prev = NULL;
-		list->first = elem;
-		list->last = elem;
-		list->blockCounter++;
-		list->AVG = 0;
-	}
-	else{// es ist min. ein Block schon in Liste enthalten
-		elem->blockNr = blockNr;
-		elem->next = NULL;
-		elem->prev = NULL;		
-		list->blockCounter++;
+	elem->blockNr = blockNr;
+	addElement(list, elem);
 
-		//Einfügen am Anfang
-		posElem = list->first;
-		if( list->blockArray[posElem->blockNr].deleteCounter > list->blockArray[blockNr].deleteCounter ){
-			elem->next = list->first;
-			list->first->prev = elem;
-			list->first = elem;
-			return;
-		}		
-
-		//Einfügen in Mitte
-		for(posElem = posElem->next; posElem != NULL; posElem = posElem->next){
-			if( list->blockArray[posElem->blockNr].deleteCounter > list->blockArray[blockNr].deleteCounter ){
-				elem->next = posElem;
-				elem->prev = posElem->prev;
-				posElem->prev = elem;
-				return;
-			}
-		}
-
-		//Einfügen am Ende
-		elem->prev = list->last;
-		list->last->next = elem;
-		list->last = elem;		
-	}
 }
 
 ListElem_t* getFirstElement(List_t* list){	
@@ -90,7 +129,11 @@ ListElem_t* getFirstElement(List_t* list){
 	list->first = elem->next;
 	list->first->prev = NULL;
 	elem->next = NULL;
+	
+	//recalc AVG
+	list->AVG = (double) list->AVG * list->blockCounter;
 	list->blockCounter--;
+	list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
 
 	return elem;	
 }
@@ -112,9 +155,14 @@ ListElem_t* getLastElement(List_t* list){
 
 	elem = list->last;
 	list->last = elem->prev;
-	list->last->next = NULL;
-	elem->prev = NULL;
+	list->last->next = NULL;	
+	elem->prev = NULL;	
+	
+	//recalc AVG
+	list->AVG = (double) list->AVG * list->blockCounter;
 	list->blockCounter--;
+	list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
+	
 
 	return elem;	
 }
@@ -176,21 +224,6 @@ void printList(List_t* list){
 	printf("AVG: %f, AnzahlElemente: %i\n", list->AVG, list->blockCounter);
 }
 
-void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus){	
-	double temp;
-
-	if( plus == TRUE){
-		 temp = list->AVG * (list->blockCounter-1);
-		 temp = temp + deleteCounter;
-		 list->AVG = (double)temp / list->blockCounter;
-	}
-	else{
-		temp = list->AVG * (list->blockCounter+1);
-		temp = temp - deleteCounter;
-		list->AVG = (double)temp / list->blockCounter;
-	}
-}
-
 uint8_t delBlock(List_t* list, uint32_t blockNr){
 	ListElem_t* element;
 	ListElem_t* next;
@@ -234,7 +267,11 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 			}
 
 			free(element);
+			//recalc AVG
+			list->AVG = (double) list->AVG * list->blockCounter;
 			list->blockCounter--;
+			list->AVG = (double) (list->AVG - list->blockArray[blockNr].deleteCounter ) / list->blockCounter;
+			
 			return TRUE;
 		}
 	}

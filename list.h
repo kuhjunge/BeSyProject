@@ -22,6 +22,11 @@ void freeList(List_t* list);
 void addBlock(List_t* list, uint32_t blockNr);
 
 /*
+ *	Fügt ein Element zu der Liste hinzu
+ */
+void addElement(List_t* list, ListElem_t* element);
+
+/*
  *	Lösche Block aus Liste raus
  *	Rückgabewert ist als boolscher Wert zu interpretieren
  */
@@ -43,8 +48,6 @@ ListElem_t* getLastElement(List_t* list);
 *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
 */
 void recalculationAVG(List_t* list);
-
-void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus);
 
 /*
 *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
