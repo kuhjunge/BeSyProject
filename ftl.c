@@ -1,7 +1,6 @@
 /* Implementierung eines FTL's */
 #include "ftl.h"
 
-flash_t* flashDevice;
 // Funktionen Allocator
 ////////////////////////////////////////////////////////////////////
 
@@ -45,6 +44,7 @@ uint8_t writeSegmentToBlock(flash_t* flashDevice, uint8_t* segment, uint32_t blo
 
 
 uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data, uint8_t useSpare);
+
 /*
  *	WearLeveling Algorithmus nach [TC11]
  *	Übergabeparameter ist eine Instanz von flash_t und der gerade gelöschte Block
@@ -594,6 +594,7 @@ uint8_t nextBlock(flash_t *flashDevice){
 ////////////////////////////////////////////////////////////////////
 
 flash_t * mount(flashMem_t *flashHardware){
+	flash_t* flashDevice;
 	uint32_t i;
 
 	// Initialisieren		
