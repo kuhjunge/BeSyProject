@@ -96,7 +96,6 @@ typedef struct flash_struct
 	List_t* hotPool;
 	List_t* coldPool;
 	List_t* neutralPool;
-	List_t* writePool;
 	double AVG;// globaler AVG
 } flash_t;
 
