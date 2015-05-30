@@ -4,7 +4,7 @@
 
 flash_t* ssd;
 flashMem_t flMe;
-#define TEST_COUNT 20000
+#define TEST_COUNT 100000
 
 uint8_t myData[16], myRetData[16];
 uint16_t count;
@@ -62,7 +62,7 @@ void test_write_one_logicalBlock(){
 		myData[i] = (uint8_t)(i + 65);
 
 	for(i = 0; i < TEST_COUNT; i++){
-		writeBlock(ssd, 0, myData);
+		writeBlock(ssd, 1, myData);
 	}
 
 	printf("Unmount\n");
@@ -172,7 +172,7 @@ void mapping_test(){
 		return;
 	}
 	printf("Write Prev\n");
-	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben
+	writeData(0, 480, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben
 	printf("Write\n"); // Sortiertes Schreiben
 	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//schreibe wiederholt einen Block
-	//test_write_one_logicalBlock(); 
+	test_write_one_logicalBlock(); 
 
 	//mount_test_Light();
 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
