@@ -20,22 +20,28 @@ void freeList(List_t* list){
 	free(list);
 }
 
-void addElement(List_t* list, ListElem_t* element){	
+
+
+void addBlock(List_t* list, uint32_t blockNr){
 	ListElem_t* posElem;// Pointer auf aktuelles Element	
+	ListElem_t* element = (ListElem_t*)malloc(sizeof(ListElem_t));
 
 	//Fehlerfall
-	if(element == NULL){				
+	if(blockNr < 0){				
+		free(element);
 		return;
 	}
 	//Abbruch, wenn element schon in Liste vorhanden ist
-	if( isElementOfList(list, element->blockNr) == TRUE){
+	if( isElementOfList(list, blockNr) == TRUE){
+		free(element);
 		return;
 	}
 
+	element->blockNr = blockNr;
+	element->next = NULL;
 	element->prev = NULL;
-	element->next = NULL;	
-
-	if(list->blockCounter == 0){//erster Block wird hinzugefügt			
+	
+	if(list->blockCounter == 0){//erster Block wird hinzugefügt					
 		list->first = element;
 		list->last = element;
 		list->blockCounter = 1;
@@ -72,101 +78,124 @@ void addElement(List_t* list, ListElem_t* element){
 		}		
 
 		//Einfügen in Mitte
-		for(posElem = posElem->next; posElem != NULL; posElem = posElem->next){
+		while( posElem->next != NULL && posElem->next != list->last->prev){
+			posElem = posElem->next;		
 			if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
 				element->next = posElem;
 				element->prev = posElem->prev;
 				posElem->prev->next = element;
-				posElem->prev = element;
+				posElem->prev = element;								
 				return;
 			}
-		}
-				
+		}		
+
 		//Einfügen am Ende
-		element->prev = list->last;
-		list->last->next = element;
-		list->last = element;		
+		if( list->blockArray[list->last->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
+			element->prev = list->last;
+			list->last->next = element;
+			list->last = element;		
+		}
+		else{
+			element->next = list->last;
+			list->last->prev = element;
+			element->prev = list->last->prev;
+		}
 	}
 }
 
-void addBlock(List_t* list, uint32_t blockNr){
-	ListElem_t* elem = (ListElem_t*)malloc(sizeof(ListElem_t));//Erzeuge neues Element
-	ListElem_t* posElem = NULL;// Pointer auf aktuelles Element	
+uint32_t getFirstBlock(List_t* list){	
+	uint32_t blockNr = -1;	
+	ListElem_t* element = NULL;
 
-	//Fehlerfall
-	if(blockNr < 0){		
-		free(elem);
-		return;
-	}
-
-	//Abbruch, wenn element schon in Liste vorhanden ist
-	if( isElementOfList(list, blockNr) == TRUE){
-		free(elem);
-		return;
-	}
-
-	elem->blockNr = blockNr;
-	elem->next = NULL;
-	elem->prev = NULL;
-	addElement(list, elem);
-
-}
-
-ListElem_t* getFirstElement(List_t* list){	
-	ListElem_t* elem;
-
-	if(list->blockCounter <= 0){
-		return NULL;
+	if(list->blockCounter <= 0){		
+		return -1;
 	}
 	if(list->blockCounter == 1){
-		elem = list->first;
-		elem->next = NULL;
-		elem->prev = NULL;
+		
+		blockNr = list->first->blockNr;
+		element = list->first;
 		list->first = NULL;
 		list->last = NULL;
 		list->AVG = 0;
-		list->blockCounter = 0;
-		return elem;
+		list->blockCounter = 0;		
+
+		free(element);
+		return blockNr;
 	}
 
-	elem = list->first;
-	list->first = elem->next;
-	list->first->prev = NULL;
-	elem->next = NULL;
-	elem->prev = NULL;
+	if(list->blockCounter == 2){
+		blockNr = list->first->blockNr;
+		element = list->first;
+		
+		list->first = list->first->next;
+		list->first->prev = NULL;
+		list->last = list->first;
+		
+		list->blockCounter = 1;
+		free(element);
+
+		return blockNr;
+	}
+
+
+	blockNr = list->first->blockNr;
+	element = list->first;
+
+	list->first = list->first->next;
+	list->first->prev = NULL;	
 		
 	list->blockCounter--;	
-
-	return elem;	
+		
+	free(element);
+	return blockNr;	
 }
 
-ListElem_t* getLastElement(List_t* list){	
-	ListElem_t* elem;
+uint32_t getLastBlock(List_t* list){	
+	uint32_t blockNr = -1;	
+	ListElem_t* element = NULL;
 
-	if(list->blockCounter <= 0){
-		return NULL;
+	if(list->blockCounter <= 0){		
+		return -1;
 	}
+	
 	if(list->blockCounter == 1){
-		elem = list->first;
-		elem->prev = NULL;
-		elem->next = NULL;
-		list->first = NULL;
+		
+		blockNr = list->last->blockNr;
+		element = list->last;
 		list->last = NULL;
+		list->first = NULL;
 		list->AVG = 0;
-		list->blockCounter = 0;
-		return elem;
+		list->blockCounter = 0;		
+
+		free(element);
+		return blockNr;
 	}
 
-	elem = list->last;
-	list->last = elem->prev;
-	list->last->next = NULL;	
-	elem->prev = NULL;	
-	elem->next = NULL;
-	
-	
-	list->blockCounter--;	
+	if(list->blockCounter == 2){
+		blockNr = list->last->blockNr;
+		element = list->last;
+		
+		list->last = list->last->prev;
+		list->last->next = NULL;
+		list->first = list->last;
+		
+		list->blockCounter = 1;
+		free(element);
 
-	return elem;	
+		return blockNr;
+	}
+
+
+	blockNr = list->last->blockNr;
+	element = list->last;
+
+	list->last = list->last->prev;
+	list->last->next = NULL;	
+		
+	list->blockCounter--;	
+		
+	free(element);
+	return blockNr;	
 }
 
 void recalculationAVG(List_t* list){	

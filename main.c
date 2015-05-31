@@ -255,7 +255,7 @@ void mapping_test(){
 	printf("Mappingtest erfolgreich\n");
 	printerr(ssd);
 }
-
+/*
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
@@ -281,4 +281,4 @@ int main(int argc, char *argv[]) {
 	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 
 
-}
+}*/

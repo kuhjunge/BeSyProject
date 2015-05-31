@@ -1,6 +1,6 @@
 //Testklasse für List.h
 #include "ftl.h"
-/*
+
 int main(int argc, char *argv[]) {
 	flash_t* ssd;
 	flashMem_t flMe;
@@ -8,13 +8,19 @@ int main(int argc, char *argv[]) {
 	List_t* p2;
 	int i, tmp;
 	
-	FL_resetFlash(); 
-	ssd = mount(&flMe);
+	FL_resetFlash(); 	
+	ssd = (flash_t*)malloc(sizeof(flash_t));
+	for (i = 0; i < 20; i++){			
+		ssd->blockArray[i].invalidCounter = 0;
+		ssd->blockArray[i].deleteCounter = 0;
+		ssd->blockArray[i].writePos = 0;
+		ssd->blockArray[i].status = ready;
+	}
 	p1 = initList(ssd->blockArray);
 	p2 = initList(ssd->blockArray);
 
 	for(i = 0; i < 20; i++){
-		ssd->blockArray[i].deleteCounter = rand() % 50;
+		ssd->blockArray[i].deleteCounter = i;//rand() % 50;
 	}
 
 	for(i = 0; i < 20; i++){
@@ -23,12 +29,12 @@ int main(int argc, char *argv[]) {
 	printList(p1);
 
 	for(i = 0; i < 20; i++){
-		addBlock(p2, getFirstElement(p1)->blockNr);
+		addBlock(p2, getFirstBlock(p1));
 	}
 	printList(p2);
 
 	for(i = 0; i < 20; i++){
-		addBlock(p1, getLastElement(p2)->blockNr);
+		addBlock(p1, getLastBlock(p2));
 	}
 	printList(p1);
 
@@ -39,18 +45,24 @@ int main(int argc, char *argv[]) {
 	printList(p2);
 
 	for(i = 0; i < 20; i++){
-		tmp = getFirstElement(p2)->blockNr;
+		tmp = getFirstBlock(p2);
 		delBlock(p2, tmp);
 		addBlock(p2, tmp);
 	}
 	printList(p2);
 
 	for(i = 0; i < 20; i++){
-		tmp = getLastElement(p2)->blockNr;
+		tmp = getLastBlock(p2);
 		delBlock(p2, tmp);
 		addBlock(p2, tmp);
 	}
 	printList(p2);
 
+	for(i = 0; i < 20; i++){
+		tmp = getLastBlock(p2);		
+		addBlock(p1, tmp);
+	}
+	printList(p1);
+
 	scanf_s(&i);
-}*/
+}

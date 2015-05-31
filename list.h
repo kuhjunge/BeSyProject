@@ -22,27 +22,22 @@ void freeList(List_t* list);
 void addBlock(List_t* list, uint32_t blockNr);
 
 /*
- *	Fügt ein Element zu der Liste hinzu
- */
-void addElement(List_t* list, ListElem_t* element);
-
-/*
  *	Lösche Block aus Liste raus
  *	Rückgabewert ist als boolscher Wert zu interpretieren
  */
 uint8_t delBlock(List_t* list, uint32_t blockNr);
 
 /*
-*	Gebe das Element dieser Liste zurück
+*	Gebe den ersten Block dieser Liste zurück
 *	und entferne aus Liste
 */
-ListElem_t* getFirstElement(List_t* list);
+uint32_t getFirstBlock(List_t* list);
 
 /*
-*	Gebe das letzte Element dieser Liste zurück
+*	Gebe den letzten Block dieser Liste zurück
 *	und entferne aus Liste
 */
-ListElem_t* getLastElement(List_t* list);
+uint32_t getLastBlock(List_t* list);
 
 /*
 *	Berechne AVG dieser List nach einem neuen Löschvorgang neu
