@@ -135,26 +135,9 @@ uint8_t writeSegmentToBlock(flash_t* flashDevice, uint8_t* segment, uint32_t blo
 	return TRUE;
 }
 
-void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
-	uint16_t p, i;
-	uint8_t data[BLOCKSEGMENTS][LOGICAL_BLOCK_DATASIZE];
-	uint32_t mappingData[BLOCKSEGMENTS];
-	uint16_t data_position = 0;
-	uint8_t tempSegment[LOGICAL_BLOCK_DATASIZE];
-	ListElem_t* position;
-	uint32_t tempAllocData;
-	uint32_t tempBlock = 0;
-	ListElem_t* element = NULL;
-
-	//Average Recalculation gesamt
-	flashDevice->AVG += (double)1 / FL_getBlockCount();
-
-	//erase operation in neutral pool?	
-	if (isElementOfList(flashDevice->neutralPool, deletedBlock) == TRUE){
-		//Average Recalculation Neutral
-		recalculationAVG(flashDevice->neutralPool);
-
-		//check condition 1 und 2 => grouping
+void grouping(flash_t* flashDevice){
+	ListElem_t* position = NULL;
+	//check condition 1 und 2 => grouping
 		//für neutral pool obere Grenze
 		position = showLastElement(flashDevice->neutralPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG + THETA){			
@@ -173,54 +156,33 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 		}
 		//für cold pool obere Grenze
 		position = showLastElement(flashDevice->coldPool);
-		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG - THETA){
-			element = getLastElement(flashDevice->coldPool);
-			addElement(flashDevice->neutralPool, element);	
+		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG - THETA){			
+			addElement(flashDevice->neutralPool, getLastElement(flashDevice->coldPool));	
 			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getPrevElement(position);
 		}
 		//für hot pool untere Grenze
 		position = showFirstElement(flashDevice->hotPool);
-		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG + THETA){
-			element = getFirstElement(flashDevice->hotPool);
-			addElement(flashDevice->neutralPool,  element);
+		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG + THETA){			
+			addElement(flashDevice->neutralPool,  getFirstElement(flashDevice->hotPool));
 			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getNextElement(position);
 		}			
+}
 
-		//Löschvorgang
-		// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
-		for (p = 0; p < FL_getPagesPerBlock(); p++){
-			for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
-				if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
-					readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
-					mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
-					setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i,0);
-					data_position++;
-				}
-			}
-		}
-		cleanBlock(flashDevice, deletedBlock);		
-		//übernehme neu in neutralPool, damit Position richtig gesetzt wird
-		delBlock(flashDevice->neutralPool, deletedBlock);		
-		addBlock(flashDevice->neutralPool, deletedBlock);		
+void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, uint8_t hotNeutralisation){
+	uint16_t p, i;
+	uint8_t data[BLOCKSEGMENTS][LOGICAL_BLOCK_DATASIZE];
+	uint32_t mappingData[BLOCKSEGMENTS];
+	uint16_t data_position = 0;
+	uint8_t tempSegment[LOGICAL_BLOCK_DATASIZE];
+	ListElem_t* position;
+	uint32_t tempAllocData = 0;
+	uint32_t tempBlock = 0;
 
-		for (i = 0; i < data_position; i++){			
-			writeBlockIntern(flashDevice, mappingData[i], data[i]);
-		}		
-		
-		return;
-	}
-	//erase operation in hot pool
-	if (isElementOfList(flashDevice->hotPool, deletedBlock) == TRUE){
-		//Average Recalculation Hot
-		recalculationAVG(flashDevice->hotPool);
-
-		//check condition 3
-		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
-			//step 1 kopiere valide Segmente in tempBlock			
+		//step 1 kopiere valide Segmente in tempBlock			
 			for (p = 0; p < FL_getPagesPerBlock(); p++){
 				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
@@ -231,70 +193,96 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 			}
 			//step 2 lösche Block und setze Zähler hoch
 			cleanBlock(flashDevice, deletedBlock);
-			//step 3 kopiere alle validen Segmente aus Min(neutralPool) in deletedBlock
+			//step 3 kopiere alle validen Segmente aus Min(neutralPool)/Max(neutralPool) in deletedBlock
 			for (p = 0; p < FL_getPagesPerBlock(); p++){
 				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
-					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
-						element = showFirstElement(flashDevice->neutralPool);
-						if( element != NULL){
-							readBlockIntern(flashDevice, element->blockNr, p, i, tempSegment);						
-							writeSegmentToBlock(flashDevice, tempSegment, deletedBlock);
+					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){						
+						if(hotNeutralisation == TRUE){
+							readBlockIntern(flashDevice, showFirstElement(flashDevice->neutralPool)->blockNr, p, i, tempSegment);						
 						}
+						else{
+							readBlockIntern(flashDevice, showLastElement(flashDevice->neutralPool)->blockNr, p, i, tempSegment);						
+						}
+						writeSegmentToBlock(flashDevice, tempSegment, deletedBlock);						
 					}
 				}
 			}
-			//step 4 kopiere aus tempBlock(data) in MAX(neutralPool)
-			position = showLastElement(flashDevice->neutralPool);
+			//step 4 kopiere aus tempBlock(data) in MAX(neutralPool)/Min(neutralPool)
+			if(hotNeutralisation == TRUE){
+				position = showLastElement(flashDevice->neutralPool);
+			}
+			else{
+				position = showFirstElement(flashDevice->neutralPool);
+			}
 			for (i = 0; i < data_position; i++){				
 				p = writeSegmentToBlock(flashDevice, data[i], position->blockNr);
 				// falls das Segment nicht geschrieben wurde
 				if (p == FALSE){
-					position = getPrevElement(position);
+					if(hotNeutralisation == TRUE){
+						position = getPrevElement(position);
+					}
+					else{
+						position = getNextElement(position);
+					}
 					if (position == NULL){
 						printf("Fehler im WearLevelingAlgorithmus in step 4. Kein beschreibbarer Block mehr im neutralPool vorhanden\n");
 						return;
 					}
 				}
 			}
-			//step 5 update der Adressen; deletedBlock <-> showFirstBlock(flashDevice->neutralPool)
-			element = showFirstElement(flashDevice->neutralPool);
-			if(element != NULL)
-				tempBlock = element->blockNr;
+			//step 5 update der Adressen; deletedBlock <-> showFirstElement(flashDevice->neutralPool)/showLastElement(flashDevice->neutralPool)
+			if(hotNeutralisation == TRUE){
+				tempBlock = showFirstElement(flashDevice->neutralPool)->blockNr;
+			}
+			else{
+				tempBlock = showLastElement(flashDevice->neutralPool)->blockNr;
+			}
 			for (i = 0; i < BLOCKSEGMENTS; i++){
 				tempAllocData = getMapT(flashDevice, deletedBlock, i);
 				setMapT(flashDevice, deletedBlock, i, getMapT(flashDevice, tempBlock, i));
 				setMapT(flashDevice, tempBlock, i, tempAllocData);
 			}			
 			// Berechen AVGs neu nach Neutralisation
-			flashDevice->hotPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->hotPool->blockCounter;
+			pool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / pool->blockCounter;
 			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			//übernehme neu in Pool, damit Position richtig gesetzt wird
-			delBlock(flashDevice->hotPool, deletedBlock);
-			addBlock(flashDevice->hotPool, deletedBlock);			
+			delBlock(pool, deletedBlock);
+			addBlock(pool, deletedBlock);			
+}
+
+void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
+	uint16_t p, i;
+	uint8_t data[BLOCKSEGMENTS][LOGICAL_BLOCK_DATASIZE];
+	uint32_t mappingData[BLOCKSEGMENTS];
+	uint16_t data_position = 0;
+	int inPool = 1;
+
+	//Average Recalculation gesamt
+	flashDevice->AVG += (double)1 / FL_getBlockCount();
+
+	//erase operation in neutral pool?	
+	if (isElementOfList(flashDevice->neutralPool, deletedBlock) == TRUE){
+		//Average Recalculation Neutral
+		recalculationAVG(flashDevice->neutralPool);
+
+		//Grouping
+		grouping(flashDevice);
+
+		inPool = 1;
+	}
+	//erase operation in hot pool
+	if (isElementOfList(flashDevice->hotPool, deletedBlock) == TRUE){
+		//Average Recalculation Hot
+		recalculationAVG(flashDevice->hotPool);
+
+		//check condition 3
+		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
+			//Neutralisation
+			neutralisation(flashDevice, flashDevice->hotPool, deletedBlock, TRUE);
 			return;
 		}
-		else{
-			// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
-			for (p = 0; p < FL_getPagesPerBlock(); p++){
-				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
-					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
-						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
-						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
-						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
-						data_position++;
-					}
-				}
-			}
-			cleanBlock(flashDevice, deletedBlock);
-			//übernehme neu in Pool, damit Position richtig gesetzt wird
-			delBlock(flashDevice->hotPool, deletedBlock);
-			addBlock(flashDevice->hotPool, deletedBlock);			
-
-			for (i = 0; i < data_position; i++){				
-				writeBlockIntern(flashDevice, mappingData[i], data[i]);
-			}			
-		}
-		return;
+		
+		inPool = 2;
 	}
 	//erase operation in cold pool
 	if (isElementOfList(flashDevice->coldPool, deletedBlock) == TRUE){
@@ -303,64 +291,16 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
-			//step 1 kopiere valide Segmente in tempBlock			
-			for (p = 0; p < FL_getPagesPerBlock(); p++){
-				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
-					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
-						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);						
-						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i); 
-						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
-						data_position++;
-					}
-				}
-			}
-			//step 2 lösche Block und setze Zähler hoch
-			cleanBlock(flashDevice, deletedBlock);
-			//step 3 kopiere alle validen Segmente aus Max(neutralPool) in deletedBlock
-			for (p = 0; p < FL_getPagesPerBlock(); p++){
-				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
-					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
-						element = showLastElement(flashDevice->neutralPool);
-						if(element != NULL){
-							readBlockIntern(flashDevice, element->blockNr, p, i, tempSegment);						
-							writeSegmentToBlock(flashDevice, tempSegment, deletedBlock);
-						}
-					}
-				}
-			}
-			//step 4 kopiere aus tempBlock(data) in Min(neutralPool)
-			position = showFirstElement(flashDevice->neutralPool);
-			for (i = 0; i < data_position; i++){	
-				p = writeSegmentToBlock(flashDevice, data[i], position->blockNr);
-				// falls das Segment nicht geschrieben wurde
-				if (p == FALSE){
-					position = getNextElement(position);
-					if (position == NULL){
-						printf("Fehler im WearLevelingAlgorithmus in step 4. Kein beschreibbarer Block mehr im neutralPool vorhanden\n");
-						printList(flashDevice->neutralPool);
-						return;
-					}
-				}
-			}
-			//step 5 update der Adressen; deletedBlock <-> showLastBlock(flashDevice->neutralPool)
-			element = showLastElement(flashDevice->neutralPool);
-			if(element != NULL)
-				tempBlock = element->blockNr;
-			for (i = 0; i < BLOCKSEGMENTS; i++){
-				tempAllocData = getMapT(flashDevice, deletedBlock, i);
-				setMapT(flashDevice, deletedBlock, i, getMapT(flashDevice, tempBlock, i));
-				setMapT(flashDevice, tempBlock, i, tempAllocData);
-			}
-			// Berechen AVGs neu nach Neutralisation
-			flashDevice->coldPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->coldPool->blockCounter;
-			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
-			//übernehme neu in Pool, damit Position richtig gesetzt wird
-			delBlock(flashDevice->coldPool, deletedBlock);
-			addBlock(flashDevice->coldPool, deletedBlock);
-			return;
+			//Neutralisation
+			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);
+			return;			
 		}
-		else{
-			// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
+
+		inPool = 3;
+	}
+
+	//Lösche Block
+	// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
 			for (p = 0; p < FL_getPagesPerBlock(); p++){
 				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
@@ -372,16 +312,26 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				}
 			}
 			cleanBlock(flashDevice, deletedBlock);
-			//übernehme neu in Pool, damit Position richtig gesetzt wird
-			delBlock(flashDevice->coldPool, deletedBlock);
-			addBlock(flashDevice->coldPool, deletedBlock);			
+			//übernehme neu in Pool, damit Position in Pool richtig gesetzt wird
+			if(inPool == 1){
+				delBlock(flashDevice->neutralPool, deletedBlock);
+				addBlock(flashDevice->neutralPool, deletedBlock);			
+			}
+			if(inPool == 2){
+				delBlock(flashDevice->hotPool, deletedBlock);
+				addBlock(flashDevice->hotPool, deletedBlock);			
+			}
+			if(inPool == 3){
+				delBlock(flashDevice->coldPool, deletedBlock);
+				addBlock(flashDevice->coldPool, deletedBlock);			
+			}
 
+			//schreibe Daten zurück
 			for (i = 0; i < data_position; i++){				
 				writeBlockIntern(flashDevice, mappingData[i], data[i]);
 			}			
-		}
-		return;
-	}
+		
+		
 
 }
 

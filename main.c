@@ -103,7 +103,7 @@ void test_write_one_logicalBlock(){
 		//überprüfe
 		for(k = 0; k < 16; k++){
 			if(myData[k] != myRetData[k]){
-				printf("Fehler beim Lesen\n");
+				printf("Fehler beim Lesen nach %i Zugriffen\n",i);
 				printerr(ssd);
 				return;
 			}

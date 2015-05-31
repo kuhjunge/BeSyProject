@@ -86,7 +86,7 @@ typedef struct {
 *	TODO Kommentare zu List_t ergänzen
 */
 typedef struct flash_struct
-{
+{	
 	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
 	Block_t blockArray[BLOCK_COUNT]; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;
