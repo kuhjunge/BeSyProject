@@ -18,8 +18,9 @@ void freeList(List_t* list);
 
 /*
 *	Füge eine BlockNr zu der Liste hinzu
+*	der Rückgabewert ist als boolscher Wert zu interpretieren
 */
-void addBlock(List_t* list, uint32_t blockNr);
+uint8_t addBlock(List_t* list, uint32_t blockNr);
 
 /*
  *	Lösche Block aus Liste raus
@@ -81,5 +82,9 @@ ListElem_t* getNextElement(ListElem_t* elem);
 */
 void printList(List_t* list);
 
+/*
+*	Gibt den EraseCounter der übergebenden Liste für blockNr zurück
+*/
+uint16_t EC(List_t* list, uint32_t blockNr);
 
 #endif  /* __LIST__ */ 

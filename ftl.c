@@ -146,10 +146,6 @@ void grouping(flash_t* flashDevice){
 			element = getLastBlock(flashDevice->neutralPool);
 			if( element != -1 ){				
 				addBlock(flashDevice->hotPool, element);
-				printf("grouping\nHotPool\n");
-				printList(flashDevice->hotPool);
-				printf("neutralPool\n");
-				printList(flashDevice->neutralPool);
 				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
 			}
@@ -326,7 +322,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
-						//setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);//TODO überflüssig, da eigentlich in writeBlockIntern geschieht
+						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);//TODO überflüssig, da eigentlich in writeBlockIntern geschieht
 						data_position++;
 					}
 				}
@@ -334,8 +330,11 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 			cleanBlock(flashDevice, deletedBlock);
 			//übernehme neu in Pool, damit Position in Pool richtig gesetzt wird
 			if(inPool == 1){
+				printList(flashDevice->neutralPool);
 				delBlock(flashDevice->neutralPool, deletedBlock);
-				addBlock(flashDevice->neutralPool, deletedBlock);			
+				addBlock(flashDevice->neutralPool, deletedBlock);
+				printList(flashDevice->neutralPool);
+				printf("\n");
 			}
 			if(inPool == 2){
 				delBlock(flashDevice->hotPool, deletedBlock);
@@ -606,7 +605,7 @@ uint8_t nextBlock(flash_t *flashDevice){
 		}
 	}
 	//nehme kältesten beschreibbaren Block aus neutralPool
-	for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){	
+	for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
 		if (flashDevice->blockArray[element->blockNr].status == ready){
 			flashDevice->actWriteBlock = element->blockNr;			
 			return TRUE;

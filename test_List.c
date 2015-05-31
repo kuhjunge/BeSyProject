@@ -1,6 +1,7 @@
 //Testklasse für List.h
 #include "ftl.h"
 
+
 int main(int argc, char *argv[]) {
 	flash_t* ssd;
 	flashMem_t flMe;
@@ -24,7 +25,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	for(i = 0; i < 20; i++){
-		addBlock(p1, i);		
+		if(	addBlock(p1, i) == FALSE){
+			printf("fehler\n");
+		}
+		else{
+			printf("i=%i\n",i);
+		}
 	}
 	printList(p1);
 
@@ -62,6 +68,13 @@ int main(int argc, char *argv[]) {
 		tmp = getLastBlock(p2);		
 		addBlock(p1, tmp);
 	}
+	printList(p1);
+
+	for(i = 0; i < 1000; i++){
+		tmp = rand() % 20;
+		if( delBlock(p1, tmp) )
+			addBlock(p1, tmp);
+	}	
 	printList(p1);
 
 	scanf_s(&i);
