@@ -159,26 +159,34 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 		position = showLastElement(flashDevice->neutralPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG + THETA){			
 			addElement(flashDevice->hotPool, getLastElement(flashDevice->neutralPool));			
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
 			position = getPrevElement(position);			
 		}
 		//für neutral pool untere Grenze
 		position = showFirstElement(flashDevice->neutralPool);
 		while(position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG - THETA){						
 			addElement(flashDevice->coldPool, getFirstElement(flashDevice->neutralPool));			
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getNextElement(position);
 		}
 		//für cold pool obere Grenze
 		position = showLastElement(flashDevice->coldPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG - THETA){
 			element = getLastElement(flashDevice->coldPool);
-			addElement(flashDevice->neutralPool, element);									
+			addElement(flashDevice->neutralPool, element);	
+			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getPrevElement(position);
 		}
 		//für hot pool untere Grenze
 		position = showFirstElement(flashDevice->hotPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG + THETA){
 			element = getFirstElement(flashDevice->hotPool);
-			addElement(flashDevice->neutralPool,  element);									
+			addElement(flashDevice->neutralPool,  element);
+			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getNextElement(position);
 		}			
 
@@ -257,6 +265,9 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				setMapT(flashDevice, deletedBlock, i, getMapT(flashDevice, tempBlock, i));
 				setMapT(flashDevice, tempBlock, i, tempAllocData);
 			}			
+			// Berechen AVGs neu nach Neutralisation
+			flashDevice->hotPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->hotPool->blockCounter;
+			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			//übernehme neu in Pool, damit Position richtig gesetzt wird
 			delBlock(flashDevice->hotPool, deletedBlock);
 			addBlock(flashDevice->hotPool, deletedBlock);			
@@ -275,9 +286,6 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				}
 			}
 			cleanBlock(flashDevice, deletedBlock);
-			// Berechen AVGs neu nach Neutralisation
-			flashDevice->hotPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->hotPool->blockCounter;
-			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			//übernehme neu in Pool, damit Position richtig gesetzt wird
 			delBlock(flashDevice->hotPool, deletedBlock);
 			addBlock(flashDevice->hotPool, deletedBlock);			
@@ -343,6 +351,9 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				setMapT(flashDevice, deletedBlock, i, getMapT(flashDevice, tempBlock, i));
 				setMapT(flashDevice, tempBlock, i, tempAllocData);
 			}
+			// Berechen AVGs neu nach Neutralisation
+			flashDevice->coldPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->coldPool->blockCounter;
+			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			//übernehme neu in Pool, damit Position richtig gesetzt wird
 			delBlock(flashDevice->coldPool, deletedBlock);
 			addBlock(flashDevice->coldPool, deletedBlock);
@@ -361,9 +372,6 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				}
 			}
 			cleanBlock(flashDevice, deletedBlock);
-			// Berechen AVGs neu nach Neutralisation
-			flashDevice->coldPool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / flashDevice->coldPool->blockCounter;
-			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			//übernehme neu in Pool, damit Position richtig gesetzt wird
 			delBlock(flashDevice->coldPool, deletedBlock);
 			addBlock(flashDevice->coldPool, deletedBlock);			

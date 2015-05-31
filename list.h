@@ -50,6 +50,12 @@ ListElem_t* getLastElement(List_t* list);
 void recalculationAVG(List_t* list);
 
 /*
+ *	Addiert/Subtrahiert den übergebenden deleteCounter vom AVG
+ *	plus ist als boolscher Wert zu interpretieren, TRUE== addiere, FALSE==subtrahiere
+ */
+void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus);
+
+/*
 *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
 *	und gibt TRUE, wenn enthalten und FALSE, wenn nicht
 */
@@ -64,11 +70,6 @@ ListElem_t* showFirstElement(List_t* list);
  *	Zeigt das letzte Element der Liste an, aber löscht es nicht
  */
 ListElem_t* showLastElement(List_t* list);
-
-/*
- *	Gibt die Länge der Liste zurück
- */
-uint32_t listLength(List_t* list);
 
 /*
  *	Gibt für ein übergebendes Element den Vorgänger zurück

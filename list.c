@@ -53,20 +53,20 @@ void addElement(List_t* list, ListElem_t* element){
 			list->last = element;
 		}
 
-		//recalc AVG
-		list->AVG = (double) list->AVG * list->blockCounter;
+		//recalc AVG TODO rausnehmen
+		//list->AVG = (double) list->AVG * list->blockCounter;
 		list->blockCounter++;
-		list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
+		//list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
 		return;
 	}
 	// es sind mehr als ein Block schon in Liste enthalten		
 	else{
 		element->next = NULL;
 		element->prev = NULL;		
-		//recalc AVG
-		list->AVG = (double) list->AVG * list->blockCounter;
+		//recalc AVG TODO rausnehmen
+		//list->AVG = (double) list->AVG * list->blockCounter;
 		list->blockCounter++;
-		list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
+		//list->AVG = (double) (list->AVG + list->blockArray[element->blockNr].deleteCounter ) / list->blockCounter;
 
 		//Einfügen am Anfang
 		posElem = list->first;
@@ -130,10 +130,10 @@ ListElem_t* getFirstElement(List_t* list){
 	list->first->prev = NULL;
 	elem->next = NULL;
 	
-	//recalc AVG
-	list->AVG = (double) list->AVG * list->blockCounter;
+	//recalc AVG TODO rausnehmen
+	//list->AVG = (double) list->AVG * list->blockCounter;
 	list->blockCounter--;
-	list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
+	//list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
 
 	return elem;	
 }
@@ -158,10 +158,10 @@ ListElem_t* getLastElement(List_t* list){
 	list->last->next = NULL;	
 	elem->prev = NULL;	
 	
-	//recalc AVG
-	list->AVG = (double) list->AVG * list->blockCounter;
+	//recalc AVG TODO rausnehmen
+	//list->AVG = (double) list->AVG * list->blockCounter;
 	list->blockCounter--;
-	list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
+	//list->AVG = (double) (list->AVG - list->blockArray[elem->blockNr].deleteCounter ) / list->blockCounter;
 	
 
 	return elem;	
@@ -169,6 +169,21 @@ ListElem_t* getLastElement(List_t* list){
 
 void recalculationAVG(List_t* list){	
 	list->AVG += (double) 1 / list->blockCounter;
+}
+
+void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus){	
+	double temp;
+
+	if( plus == TRUE){
+		 temp = list->AVG * (list->blockCounter-1);
+		 temp = temp + deleteCounter;
+		 list->AVG = (double)temp / list->blockCounter;
+	}
+	else{
+		temp = list->AVG * (list->blockCounter+1);
+		temp = temp - deleteCounter;
+		list->AVG = (double)temp / list->blockCounter;
+	}
 }
 
 uint8_t isElementOfList(List_t* list, uint32_t blockNr){
@@ -196,11 +211,6 @@ ListElem_t* showFirstElement(List_t* list){
 ListElem_t* showLastElement(List_t* list){
 	return list->last;
 }
-
-uint32_t listLength(List_t* list){
-	return list->blockCounter;
-}
-
 
 ListElem_t* getPrevElement(ListElem_t* elem){
 	return elem->prev;	
@@ -267,10 +277,10 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 			}
 
 			free(element);
-			//recalc AVG
-			list->AVG = (double) list->AVG * list->blockCounter;
+			//recalc AVG TODO rausnehmen
+			//list->AVG = (double) list->AVG * list->blockCounter;
 			list->blockCounter--;
-			list->AVG = (double) (list->AVG - list->blockArray[blockNr].deleteCounter ) / list->blockCounter;
+			//list->AVG = (double) (list->AVG - list->blockArray[blockNr].deleteCounter ) / list->blockCounter;
 			
 			return TRUE;
 		}
