@@ -30,6 +30,9 @@
     <ClCompile Include="list.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="test_List.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="flashhardware.h">

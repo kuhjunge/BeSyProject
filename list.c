@@ -235,8 +235,12 @@ uint32_t getFirstBlock(List_t* list){
 	}
 
 	value = list->first->blockNr;
-	delBlock(list, value);
-	return value;
+	if( delBlock(list, value) == TRUE){
+		return value;
+	}
+	else{
+		return -1;
+	}
 }
 
 uint32_t getLastBlock(List_t* list){	
@@ -247,6 +251,10 @@ uint32_t getLastBlock(List_t* list){
 	}
 
 	value = list->last->blockNr;
-	delBlock(list, value);
-	return value;
+	if ( delBlock(list, value) == TRUE){
+		return value;
+	}
+	else{
+		return -1;
+	}
 }

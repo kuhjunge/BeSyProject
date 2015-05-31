@@ -1,7 +1,7 @@
 //Testklasse für List.h
 #include "ftl.h"
 
-
+/*
 int main(int argc, char *argv[]) {
 	flash_t* ssd;
 	flashMem_t flMe;
@@ -78,4 +78,4 @@ int main(int argc, char *argv[]) {
 	printList(p1);
 
 	scanf_s(&i);
-}
+}*/

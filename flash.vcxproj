@@ -79,6 +79,7 @@
     <ClCompile Include="hw_demo.c" />
     <ClCompile Include="list.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="test_List.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="flashhardware.h" />

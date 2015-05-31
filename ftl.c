@@ -149,6 +149,9 @@ void grouping(flash_t* flashDevice){
 				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
 			}
+			else{
+				break;
+			}
 			position = getPrevElement(position);			
 		}
 		//für neutral pool untere Grenze
@@ -159,6 +162,9 @@ void grouping(flash_t* flashDevice){
 				addBlock(flashDevice->coldPool, element);			
 				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 				calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			}			
+			else{
+				break;
 			}
 			position = getNextElement(position);
 		}
@@ -171,6 +177,9 @@ void grouping(flash_t* flashDevice){
 				calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			}
+			else{
+				break;
+			}
 			position = getPrevElement(position);
 		}
 		//für hot pool untere Grenze
@@ -181,6 +190,9 @@ void grouping(flash_t* flashDevice){
 				addBlock(flashDevice->neutralPool,  element);
 				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			}
+			else{
+				break;
 			}
 			position = getNextElement(position);
 		}					
@@ -329,12 +341,9 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 			}
 			cleanBlock(flashDevice, deletedBlock);
 			//übernehme neu in Pool, damit Position in Pool richtig gesetzt wird
-			if(inPool == 1){
-				printList(flashDevice->neutralPool);
+			if(inPool == 1){				
 				delBlock(flashDevice->neutralPool, deletedBlock);
-				addBlock(flashDevice->neutralPool, deletedBlock);
-				printList(flashDevice->neutralPool);
-				printf("\n");
+				addBlock(flashDevice->neutralPool, deletedBlock);				
 			}
 			if(inPool == 2){
 				delBlock(flashDevice->hotPool, deletedBlock);
@@ -619,7 +628,12 @@ uint8_t nextBlock(flash_t *flashDevice){
 		}	
 	}
 		
-	printList(flashDevice->neutralPool);//TODO: DEBUG rausnehmen
+	printf("coldPool\n");
+	printList(flashDevice->coldPool);
+	printf("neutralPool\n");
+	printList(flashDevice->neutralPool);
+	printf("hotPool\n");
+	printList(flashDevice->hotPool);//TODO: DEBUG rausnehmen
 	// Fehlerfall, kein beschreibbarer Block gefunden
 	printf("Fehler, es wurde kein beschreibbarer Block in einem Pool gefunden!\n");
 	printerr(flashDevice);

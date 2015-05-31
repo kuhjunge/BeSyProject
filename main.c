@@ -227,11 +227,9 @@ void mapping_test(){
 		return;
 	}
 	printf("Write Prev\n");
-	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben		
-	//writeData(0, 432, 1, TEST_COUNT); // Speicher vorbeschreiben		
+	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben			
 	printf("Write\n"); // Sortiertes Schreiben	
-	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){
-	//for (i = 1; i < 432 ; i++){
+	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){	
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
 			checkvalue = (uint8_t)((i * j) % 255);
 			myData[j] = checkvalue;
@@ -255,16 +253,16 @@ void mapping_test(){
 	printf("Mappingtest erfolgreich\n");
 	printerr(ssd);
 }
-/*
+
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//schreibe wiederholt einen logischen Block
-	test_write_one_logicalBlock(600); 
+	//test_write_one_logicalBlock(20000); 
 
 	//schreibe wiederholt verschiedene Datensätze	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 450, 1000 );	
+	test_write_n_locigalBlocks( 480, 100 );	
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//mount_test_Light();
@@ -281,4 +279,4 @@ int main(int argc, char *argv[]) {
 	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 
 
-}*/
+}
