@@ -137,11 +137,15 @@ uint8_t writeSegmentToBlock(flash_t* flashDevice, uint8_t* segment, uint32_t blo
 
 void grouping(flash_t* flashDevice){
 	ListElem_t* position = NULL;
+	ListElem_t* element = NULL;
 	//check condition 1 und 2 => grouping
 		//für neutral pool obere Grenze
 		position = showLastElement(flashDevice->neutralPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG + THETA){			
-			addElement(flashDevice->hotPool, getLastElement(flashDevice->neutralPool));			
+			element = getLastElement(flashDevice->neutralPool);
+			if( isElementOfList(flashDevice->hotPool, element->blockNr) == TRUE)
+				break;
+			addElement(flashDevice->hotPool, element);			
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
 			position = getPrevElement(position);			
@@ -149,7 +153,10 @@ void grouping(flash_t* flashDevice){
 		//für neutral pool untere Grenze
 		position = showFirstElement(flashDevice->neutralPool);
 		while(position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG - THETA){						
-			addElement(flashDevice->coldPool, getFirstElement(flashDevice->neutralPool));			
+			element = getFirstElement(flashDevice->neutralPool);
+			if( isElementOfList(flashDevice->coldPool, element->blockNr) == TRUE)
+				break;
+			addElement(flashDevice->coldPool, element);			
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getNextElement(position);
@@ -157,7 +164,10 @@ void grouping(flash_t* flashDevice){
 		//für cold pool obere Grenze
 		position = showLastElement(flashDevice->coldPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG - THETA){			
-			addElement(flashDevice->neutralPool, getLastElement(flashDevice->coldPool));	
+			element = getLastElement(flashDevice->coldPool);			
+			if( isElementOfList(flashDevice->neutralPool, element->blockNr) == TRUE)
+				break;
+			addElement(flashDevice->neutralPool, element);	
 			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getPrevElement(position);
@@ -165,11 +175,14 @@ void grouping(flash_t* flashDevice){
 		//für hot pool untere Grenze
 		position = showFirstElement(flashDevice->hotPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG + THETA){			
-			addElement(flashDevice->neutralPool,  getFirstElement(flashDevice->hotPool));
+			element = getFirstElement(flashDevice->hotPool);			
+			if( isElementOfList(flashDevice->neutralPool, element->blockNr) == TRUE)
+				break;
+			addElement(flashDevice->neutralPool,  element);
 			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
 			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
 			position = getNextElement(position);
-		}			
+		}					
 }
 
 void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, uint8_t hotNeutralisation){
@@ -193,7 +206,7 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 			}
 			//step 2 lösche Block und setze Zähler hoch
 			cleanBlock(flashDevice, deletedBlock);
-			//step 3 kopiere alle validen Segmente aus Min(neutralPool)/Max(neutralPool) in deletedBlock
+			//step 3 kopiere alle validen Segmente aus Min(neutralPool)/Max(neutralPool) in deletedBlock			
 			for (p = 0; p < FL_getPagesPerBlock(); p++){
 				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){						
@@ -306,7 +319,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
 						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
-						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
+						//setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);//TODO überflüssig, da eigentlich in writeBlockIntern geschieht
 						data_position++;
 					}
 				}
@@ -404,8 +417,7 @@ void garbageCollector(flash_t *flashDevice){
 		}
 
 		// Wenn Block über Schwellwert liegt und benutzt wird				
-		if (flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status != badBlock){ 				
-			//if(flashDevice->blockArray[i].status == used){
+		if (flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status != badBlock){ 							
 			deleteCount++;
 			wearLeveling(flashDevice, i);						
 		}
@@ -554,10 +566,10 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		flashDevice->blockArray[flashDevice->actWriteBlock].status = used;
 		flashDevice->freeBlocks--;
 		nextBlock(flashDevice); // Freien Block finden und nutzen
-		if (flashDevice->freeBlocks <= SPARE_BLOCKS){ // Cleaner
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS + START_CLEANING){ // Cleaner
 			garbageCollector(flashDevice); // Clean
 		}
-		if (flashDevice->freeBlocks < SPARE_BLOCKS ) { // Fehler falls zu wenig freie Blöcke da sind
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS ) { // Fehler falls zu wenig freie Blöcke da sind
 			printf("%i flashDevice->freeBlocks ;",flashDevice->freeBlocks);
 			printf("Fehler! Festplatte zu voll! [ueber %i byte geschrieben]\n", (BLOCKSEGMENTS * (FL_getBlockCount() - SPARE_BLOCKS) * LOGICAL_BLOCK_DATASIZE) - 1);
 			printerr(flashDevice);

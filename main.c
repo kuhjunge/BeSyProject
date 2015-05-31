@@ -4,7 +4,7 @@
 
 flash_t* ssd;
 flashMem_t flMe;
-#define TEST_COUNT 10000
+#define TEST_COUNT 20000
 
 uint8_t myData[16], myRetData[16];
 uint16_t count;
@@ -46,8 +46,8 @@ void writeData(int start, int amount, int rnd, int tc){
 	}
 }
 
-void test_write_n_locigalBlocks(int value){
-	int i;
+void test_write_n_locigalBlocks(int blocks, int range){
+	int i, l, j;
 	int k = 0;
 
 	printf("Mount \n");
@@ -61,15 +61,25 @@ void test_write_n_locigalBlocks(int value){
 	for (i = 0; i < 16; i++)
 		myData[i] = (uint8_t)(i + 65);
 
-	for(i = 0; i < TEST_COUNT/value; i++){
-		for(k = 1; k <= value; k++){
-			writeBlock(ssd, k, myData);
-			readBlock(ssd, k,myRetData);
-			if(myData[0] != myRetData[0]){
-				printf("Fehler beim Lesen\n");
+	for(i = 0; i < range; i++)
+		for(l = 1; l <= blocks; l++){
+			//zufällige Zeichenfolge
+			for (j = 0; j < 16; j++){
+				myData[j] = (uint8_t)(65 + rand() % 20);
+			}
+			//schreibe
+			writeBlock(ssd, l, myData);
+			//lese
+			readBlock(ssd, l, myRetData);
+			//überprüfe
+			for(k = 0; k < 16; k++){
+				if(myData[k] != myRetData[k]){
+					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
+					printerr(ssd);
+					return;
+				}
 			}
 		}
-	}
 
 	printf("Unmount\n");
 	ssd = unmount(ssd);
@@ -78,7 +88,7 @@ void test_write_n_locigalBlocks(int value){
 }
 
 
-void test_write_one_logicalBlock(){
+void test_write_one_logicalBlock(int range){
 	int i,j;
 	int k = 0;
 
@@ -91,7 +101,7 @@ void test_write_one_logicalBlock(){
 	}
 
 	
-	for(i = 0; i < TEST_COUNT; i++){
+	for(i = 0; i < range; i++){
 		//zufällige Zeichenfolge
 		for (j = 0; j < 16; j++){
 			myData[j] = (uint8_t)(65 + rand() % 20);
@@ -249,12 +259,12 @@ void mapping_test(){
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
-	//schreibe wiederholt einen Block
-	test_write_one_logicalBlock(); 
+	//schreibe wiederholt einen logischen Block
+	//test_write_one_logicalBlock(50000); 
 
 	//schreibe wiederholt verschiedene Datensätze	
-	// 1 bis maximal 479 => 2 Blöcke Spare; d.h. 512(32*16) - 32 - 1(TODO warum?)
-	//test_write_n_locigalBlocks( 400 );	
+	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
+	test_write_n_locigalBlocks( 400, 1000 );	
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//mount_test_Light();
