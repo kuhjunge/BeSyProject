@@ -443,23 +443,23 @@ void garbageCollector(flash_t *flashDevice){
 	uint32_t k = 0;
 	uint32_t deleteCount = 0;
 	uint32_t level = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
-	printf("level %i\n",level);
+	
 	// Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden				
 	while (deleteCount < SPARE_BLOCKS  && k < FL_getBlockCount () ){ 		
-		
-		// Wenn Block über Schwellwert liegt und benutzt wird		TODO Schwellwerte herausnehmen		
-		if (flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status != badBlock){ 				
-			//if(flashDevice->blockArray[i].status == used){
-			deleteCount++;
-			wearLeveling(flashDevice, i);						
-		}
-		k++;
 		if( i >= FL_getBlockCount() - 1){
 			i = 0;
 		}
 		else{
 			i++;
 		}
+
+		// Wenn Block über Schwellwert liegt und benutzt wird				
+		if (flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status != badBlock){ 				
+			//if(flashDevice->blockArray[i].status == used){
+			deleteCount++;
+			wearLeveling(flashDevice, i);						
+		}
+		k++;		
 	}	
 }
 
@@ -616,12 +616,12 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	}
 	// Überprüfung auf fehler 
 	//TODO DEBUG-Info rausnehmen
-	readBlock(flashDevice, index, data);
+	/*readBlock(flashDevice, index, data);
 	if (!(index == getMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index)) || (data[0] != 'A')){		
 		printf("index=%i == %i=getMapT();",data[0], index, getMapT(flashDevice, block, (page * FL_getPagesPerBlock()) + bp_index));
 		printf("Fehler bei Index! %i (%i/%i/%i) \n" , index, block, page, bp_index);
 		return FALSE;
-	}
+	}*/
 
 	return TRUE;
 }
