@@ -15,7 +15,7 @@ List_t* initList(Block_t* blockArray){
 
 void freeList(List_t* list){
 	while(list->blockCounter > 0){
-		getFirstElement(list);
+		getFirstBlock(list);
 	}
 	free(list);
 }
@@ -36,71 +36,43 @@ void addBlock(List_t* list, uint32_t blockNr){
 		free(element);
 		return;
 	}
+	//Sonderfall
+	if(list->blockCounter == 0){
+		list->blockCounter = 1;
+		element->blockNr = blockNr;
+		element->next = NULL;
+		element->prev = NULL;
+		list->first = element;
+		list->last = element;
+		return;
+	}
 
 	element->blockNr = blockNr;
 	element->next = NULL;
 	element->prev = NULL;
+	list->blockCounter++;
 	
-	if(list->blockCounter == 0){//erster Block wird hinzugefügt					
-		list->first = element;
-		list->last = element;
-		list->blockCounter = 1;
-		list->AVG = 0;
-		return;
-	}
-	// es ist ein Block schon in Liste enthalten		
-	if(list->blockCounter == 1){		
-		posElem = list->first;
-		if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
-			element->next = list->first;
-			list->first->prev = element;
-			list->first = element;
-		}		
-		else{
-			element->prev = list->last;
-			list->last->next = element;
-			list->last = element;
-		}
+	posElem = list->first;
 
-		list->blockCounter++;
-		return;
-	}
-	// es sind mehr als ein Block schon in Liste enthalten		
-	else{				
-		list->blockCounter++;
-		//Einfügen am Anfang
-		posElem = list->first;
-		if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
-			element->next = list->first;
-			list->first->prev = element;
-			list->first = element;
-			return;
-		}		
-
-		//Einfügen in Mitte
-		while( posElem->next != NULL && posElem->next != list->last->prev){
-			posElem = posElem->next;		
-			if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
-				element->next = posElem;
-				element->prev = posElem->prev;
-				posElem->prev->next = element;
-				posElem->prev = element;								
-				return;
+	//füge hinzu
+	while(posElem != NULL){
+		if( list->blockArray[posElem->blockNr].deleteCounter >= list->blockArray[blockNr].deleteCounter ){
+			element->next = posElem;
+			element->prev = posElem->prev;
+			posElem->prev = element;
+			//Abfrage, ob erstes Element ist
+			if(element->prev == NULL){
+				list->first = element;
 			}
-		}		
-
-		//Einfügen am Ende
-		if( list->blockArray[list->last->blockNr].deleteCounter >= list->blockArray[element->blockNr].deleteCounter ){
-			element->prev = list->last;
-			list->last->next = element;
-			list->last = element;		
+			return;
 		}
-		else{
-			element->next = list->last;
-			list->last->prev = element;
-			element->prev = list->last->prev;
-		}
+		posElem = posElem->next;
 	}
+	//füge größten Block ans Ende an	
+	element->prev = list->last;
+	list->last->next = element;
+	list->last = element;
+
 }
 
 uint32_t getFirstBlock(List_t* list){	
