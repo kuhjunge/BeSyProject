@@ -46,6 +46,48 @@ void writeData(int start, int amount, int rnd, int tc){
 	}
 }
 
+void test_write_random_n_locigalBlocks( int blocks, int range){
+	int i, j, l;
+	int k = 0;
+
+	printf("Mount \n");
+	FL_resetFlash(); // Start der Simulation
+	ssd = mount(&flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
+
+	for (i = 0; i < 16; i++)
+		myData[i] = (uint8_t)(i + 65);
+
+	for(i = 0; i < range; i++)		{
+			//zufällige Zeichenfolge
+			for (j = 0; j < 16; j++){
+				myData[j] = (uint8_t)(65 + rand() % 20);
+			}
+			//Zufall logischer Block
+			l = (rand() % blocks) + 1;
+			//schreibe
+			writeBlock(ssd, l, myData);
+			//lese
+			readBlock(ssd, l, myRetData);
+			//überprüfe
+			for(k = 0; k < 16; k++){
+				if(myData[k] != myRetData[k]){
+					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
+					printerr(ssd);
+					return;
+				}
+			}
+		}
+
+	printf("Unmount\n");
+	ssd = unmount(ssd);
+	printerr(ssd);
+	printf("test_write_n_logicalBlocks() beendet");
+}
+
 void test_write_n_locigalBlocks(int blocks, int range){
 	int i, l, j;
 	int k = 0;
@@ -260,10 +302,13 @@ int main(int argc, char *argv[]) {
 	//schreibe wiederholt einen logischen Block
 	//test_write_one_logicalBlock(20000); 
 
-	//schreibe wiederholt verschiedene Datensätze	
+	//schreibe wiederholt verschiedene logische Blöcke	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	test_write_n_locigalBlocks( 480, 100 );	
+	//test_write_n_locigalBlocks( 480, 100 );	
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
+
+	//schreibe wiederholt zufällige logische Blöcke
+	test_write_random_n_locigalBlocks( 300, 20000);
 
 	//mount_test_Light();
 

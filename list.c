@@ -40,11 +40,21 @@ void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus){
 }
 
 ListElem_t* showFirstElement(List_t* list){
-	return list->first;
+	if(list->blockCounter <= 0){
+		return NULL;
+	}
+	else{
+		return list->first;
+	}
 }
 
 ListElem_t* showLastElement(List_t* list){
-	return list->last;
+	if(list->blockCounter <= 0){
+		return NULL;
+	}
+	else{
+		return list->last;
+	}
 }
 
 ListElem_t* getPrevElement(ListElem_t* elem){
@@ -71,7 +81,7 @@ void printList(List_t* list){
 		counter++;
 		elem = elem->next ;
 	}while(elem != NULL);
-	printf("AVG: %f, AnzahlElemente: %i\n", list->AVG, counter);
+	printf("AVG: %f, AnzahlElemente: %i/%i\n", list->AVG, counter, list->blockCounter);
 }
 
 uint8_t isElementOfList(List_t* list, uint32_t blockNr){	
