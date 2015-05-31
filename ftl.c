@@ -256,8 +256,8 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
 			
 			//übernehme neu in Pool, damit Position richtig gesetzt wird			
-			delBlock(pool, deletedBlock);			
-			addBlock(pool, deletedBlock);			
+		/*	delBlock(pool, deletedBlock);			
+			addBlock(pool, deletedBlock);			*/
 			
 }
 
@@ -293,7 +293,7 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 			}
 			cleanBlock(flashDevice, deletedBlock);
 			//übernehme neu in Pool, damit Position in Pool richtig gesetzt wird
-			if(inPool == 1){				
+		/*	if(inPool == 1){				
 				delBlock(flashDevice->neutralPool, deletedBlock);
 				addBlock(flashDevice->neutralPool, deletedBlock);				
 			}
@@ -304,7 +304,7 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 			if(inPool == 3){
 				delBlock(flashDevice->coldPool, deletedBlock);
 				addBlock(flashDevice->coldPool, deletedBlock);			
-			}
+			}*/
 
 			//schreibe Daten zurück
 			for (i = 0; i < data_position; i++){				
@@ -313,6 +313,14 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 }
 
 void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){		
+
+	printf("\n\ncoldPool\n");
+	printList(flashDevice->coldPool);
+	printf("neutralPool\n");
+	printList(flashDevice->neutralPool);
+	printf("hotPool\n");
+	printList(flashDevice->hotPool);//TODO: DEBUG rausnehmen
+	printf("\n");
 
 	//Average Recalculation gesamt
 	flashDevice->AVG += (double)1 / FL_getBlockCount();
@@ -325,19 +333,19 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 		//lösche deletedBlock
 		deleteBlock(flashDevice, deletedBlock, 1);
 
-		//Grouping
-		grouping(flashDevice);		
+		//Grouping			
+		if( flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->AVG + THETA ){
+			addBlock(flashDevice->hotPool, getLastBlock(flashDevice->neutralPool));
+		}
+		if( flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->AVG - THETA ){
+			addBlock(flashDevice->coldPool, getFirstBlock(flashDevice->neutralPool));
+		}
+		grouping(flashDevice);	
 				
 	}
 	//erase operation in hot pool
 	if (isElementOfList(flashDevice->hotPool, deletedBlock) == TRUE){
-
-				printf("\n\n\ncoldPool\n");
-	printList(flashDevice->coldPool);
-	printf("neutralPool\n");
-	printList(flashDevice->neutralPool);
-	printf("hotPool\n");
-	printList(flashDevice->hotPool);//TODO: DEBUG rausnehmen
+						
 		//Average Recalculation Hot
 		recalculationAVG(flashDevice->hotPool);
 		
@@ -355,13 +363,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 	}
 	//erase operation in cold pool
 	if (isElementOfList(flashDevice->coldPool, deletedBlock) == TRUE){
-		
-		printf("\n\n\ncoldPool\n");
-	printList(flashDevice->coldPool);
-	printf("neutralPool\n");
-	printList(flashDevice->neutralPool);
-	printf("hotPool\n");
-	printList(flashDevice->hotPool);//TODO: DEBUG rausnehmen
+				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
 
