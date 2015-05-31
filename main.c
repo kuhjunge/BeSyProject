@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
 
 	//schreibe wiederholt verschiedene Datensätze	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	test_write_n_locigalBlocks( 400, 1000 );	
+	test_write_n_locigalBlocks( 450, 1000 );	
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//mount_test_Light();

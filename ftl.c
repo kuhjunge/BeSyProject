@@ -143,44 +143,48 @@ void grouping(flash_t* flashDevice){
 		position = showLastElement(flashDevice->neutralPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG + THETA){			
 			element = getLastElement(flashDevice->neutralPool);
-			if( isElementOfList(flashDevice->hotPool, element->blockNr) == TRUE)
-				break;
-			addElement(flashDevice->hotPool, element);			
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
-			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
+			if( element != NULL ){				
+				addElement(flashDevice->hotPool, element);
+				printf("grouping\nHotPool\n");
+				printList(flashDevice->hotPool);
+				printf("neutralPool\n");
+				printList(flashDevice->neutralPool);
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);			
+			}
 			position = getPrevElement(position);			
 		}
 		//für neutral pool untere Grenze
 		position = showFirstElement(flashDevice->neutralPool);
 		while(position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG - THETA){						
 			element = getFirstElement(flashDevice->neutralPool);
-			if( isElementOfList(flashDevice->coldPool, element->blockNr) == TRUE)
-				break;
-			addElement(flashDevice->coldPool, element);			
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
-			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			if( element != NULL ){				
+				addElement(flashDevice->coldPool, element);			
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+				calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			}
 			position = getNextElement(position);
 		}
 		//für cold pool obere Grenze
 		position = showLastElement(flashDevice->coldPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter > flashDevice->AVG - THETA){			
 			element = getLastElement(flashDevice->coldPool);			
-			if( isElementOfList(flashDevice->neutralPool, element->blockNr) == TRUE)
-				break;
-			addElement(flashDevice->neutralPool, element);	
-			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			if( element != NULL ){				
+				addElement(flashDevice->neutralPool, element);	
+				calculateAVG(flashDevice->coldPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			}
 			position = getPrevElement(position);
 		}
 		//für hot pool untere Grenze
 		position = showFirstElement(flashDevice->hotPool);
 		while (position != NULL && flashDevice->blockArray[position->blockNr].deleteCounter < flashDevice->AVG + THETA){			
-			element = getFirstElement(flashDevice->hotPool);			
-			if( isElementOfList(flashDevice->neutralPool, element->blockNr) == TRUE)
-				break;
-			addElement(flashDevice->neutralPool,  element);
-			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			element = getFirstElement(flashDevice->hotPool);				
+			if( element != NULL ) {
+				addElement(flashDevice->neutralPool,  element);
+				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[position->blockNr].deleteCounter, FALSE);
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[position->blockNr].deleteCounter, TRUE);
+			}
 			position = getNextElement(position);
 		}					
 }
@@ -258,9 +262,11 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 			// Berechen AVGs neu nach Neutralisation
 			pool->AVG += (double) (flashDevice->blockArray[deletedBlock].deleteCounter - flashDevice->blockArray[tempBlock].deleteCounter) / pool->blockCounter;
 			flashDevice->AVG += (double) (flashDevice->blockArray[tempBlock].deleteCounter - flashDevice->blockArray[deletedBlock].deleteCounter) / FL_getBlockCount();
-			//übernehme neu in Pool, damit Position richtig gesetzt wird
-			delBlock(pool, deletedBlock);
+			
+			//übernehme neu in Pool, damit Position richtig gesetzt wird			
+			delBlock(pool, deletedBlock);			
 			addBlock(pool, deletedBlock);			
+			
 }
 
 void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){

@@ -27,6 +27,10 @@ void addElement(List_t* list, ListElem_t* element){
 	if(element == NULL){				
 		return;
 	}
+	//Abbruch, wenn element schon in Liste vorhanden ist
+	if( isElementOfList(list, element->blockNr) == TRUE){
+		return;
+	}
 
 	element->prev = NULL;
 	element->next = NULL;	
@@ -34,7 +38,7 @@ void addElement(List_t* list, ListElem_t* element){
 	if(list->blockCounter == 0){//erster Block wird hinzugefügt			
 		list->first = element;
 		list->last = element;
-		list->blockCounter++;
+		list->blockCounter = 1;
 		list->AVG = 0;
 		return;
 	}
@@ -91,6 +95,12 @@ void addBlock(List_t* list, uint32_t blockNr){
 
 	//Fehlerfall
 	if(blockNr < 0){		
+		free(elem);
+		return;
+	}
+
+	//Abbruch, wenn element schon in Liste vorhanden ist
+	if( isElementOfList(list, blockNr) == TRUE){
 		free(elem);
 		return;
 	}
@@ -220,7 +230,7 @@ void printList(List_t* list){
 
 	elem = list->first;
 	while(elem != NULL){
-		printf("%i, ", elem->blockNr);
+		printf("%i[%i], ", elem->blockNr, list->blockArray[elem->blockNr].deleteCounter);
 		elem = elem->next;
 	}
 	printf("AVG: %f, AnzahlElemente: %i\n", list->AVG, list->blockCounter);
@@ -248,7 +258,7 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 		}
 	}
 
-	for(element = list->first; element != NULL; element = element->next){
+	for(element = list->first; element->next != NULL; element = element->next){
 		if(element->blockNr == blockNr){
 			next = element->next;
 			prev = element->prev;
@@ -268,11 +278,8 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 				next->prev = prev;
 			}
 
-			free(element);
-			//recalc AVG TODO rausnehmen
-			//list->AVG = (double) list->AVG * list->blockCounter;
-			list->blockCounter--;
-			//list->AVG = (double) (list->AVG - list->blockArray[blockNr].deleteCounter ) / list->blockCounter;
+			free(element);			
+			list->blockCounter--;			
 			
 			return TRUE;
 		}
