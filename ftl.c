@@ -753,14 +753,24 @@ flash_t *unmount(flash_t *flashDevice){
 uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	uint32_t i;
 	if (flashDevice == NULL) return FALSE;
-	i = mapping(flashDevice, index); // Mapping
+	if(index > LOG_BLOCK_COUNT){
+		printf("Logischer Block nicht mehr im Wertebereich des Datenträgers. 0 bis % logische Blöcke adressierbar.\n", LOG_BLOCK_COUNT);
+		return FALSE;
+	}
+	//Index immer um 1 erhöht, da index == 0 für andere Zwecke verwendet wird.
+	i = mapping(flashDevice, index + 1); // Mapping
 	return readBlockIntern(flashDevice, i / BLOCKSEGMENTS, (i % BLOCKSEGMENTS) / FL_getPagesPerBlock(), ((i % BLOCKSEGMENTS) % FL_getPagesPerBlock()), data); // Blocksegment auslesen
 
 }
 
 uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	if (flashDevice == NULL) return FALSE;
-	return writeBlockIntern(flashDevice, index, data);
+	if(index > LOG_BLOCK_COUNT){
+		printf("Logischer Block nicht mehr im Wertebereich des Datenträgers. 0 bis % logische Blöcke adressierbar.\n", LOG_BLOCK_COUNT);
+		return FALSE;
+	}
+	//Index immer um 1 erhöht, da index == 0 für andere Zwecke verwendet wird.
+	return writeBlockIntern(flashDevice, index + 1, data);
 }
 
 // DEBUG Funktionsimplementation FLT
