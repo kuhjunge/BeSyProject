@@ -46,9 +46,9 @@ void writeData(int start, int amount, int rnd, int tc){
 	}
 }
 
-void test_write_random_n_locigalBlocks( int blocks, int range){
-	int i, j, l;
-	int k = 0;
+void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_t charNumber){
+	uint16_t i, j, l;
+	uint16_t k = 0;
 
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
@@ -58,12 +58,12 @@ void test_write_random_n_locigalBlocks( int blocks, int range){
 		return;
 	}
 
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < charNumber; i++)
 		myData[i] = (uint8_t)(i + 65);
 
 	for(i = 0; i < range; i++)		{
 			//zufällige Zeichenfolge
-			for (j = 0; j < 16; j++){
+			for (j = 0; j < charNumber; j++){
 				myData[j] = (uint8_t)(65 + rand() % 20);
 			}
 			//Zufall logischer Block
@@ -73,7 +73,7 @@ void test_write_random_n_locigalBlocks( int blocks, int range){
 			//lese
 			readBlock(ssd, l, myRetData);
 			//überprüfe
-			for(k = 0; k < 16; k++){
+			for(k = 0; k < charNumber; k++){
 				if(myData[k] != myRetData[k]){
 					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
 					printerr(ssd);
@@ -88,9 +88,9 @@ void test_write_random_n_locigalBlocks( int blocks, int range){
 	printf("test_write_n_logicalBlocks() beendet");
 }
 
-void test_write_n_locigalBlocks(int blocks, int range){
-	int i, l, j;
-	int k = 0;
+void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range){
+	uint16_t i, l, j;
+	uint16_t k = 0;
 
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
@@ -130,9 +130,9 @@ void test_write_n_locigalBlocks(int blocks, int range){
 }
 
 
-void test_write_one_logicalBlock(int range){
-	int i,j;
-	int k = 0;
+void test_write_one_logicalBlock(uint16_t range){
+	uint16_t i,j;
+	uint16_t k = 0;
 
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
@@ -269,9 +269,9 @@ void mapping_test(){
 		return;
 	}
 	printf("Write Prev\n");
-	writeData(0, 495, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben			
+	writeData(0, 480, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben			
 	printf("Write\n"); // Sortiertes Schreiben	
-	for (i = 1; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS-1 ; i++){	
+	for (i = 0; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS ; i++){	
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
 			checkvalue = (uint8_t)((i * j) % 255);
 			myData[j] = checkvalue;
@@ -279,8 +279,7 @@ void mapping_test(){
 		writeBlock(ssd, i, myData);
 	}
 	printf("Read\n"); // Sortiertes lesen
-	for (i = 1; i <= (BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS -1 ; i++){
-	//for (i = 1; i < 432 ; i++){
+	for (i = 0; i <= (BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS ; i++){	
 		readBlock(ssd, i, myRetData);
 		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
 			checkvalue = (uint8_t)((i * j) % 255);
@@ -308,7 +307,7 @@ int main(int argc, char *argv[]) {
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 300, 20000);
+	test_write_random_n_locigalBlocks( 480, 50000, 16);
 
 	//mount_test_Light();
 

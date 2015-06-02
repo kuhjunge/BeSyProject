@@ -105,6 +105,15 @@ uint8_t isElementOfList(List_t* list, uint32_t blockNr){
 	return FALSE;
 }
 
+uint16_t countElements(List_t* list){
+	uint16_t counter = 1;
+	ListElem_t* pos;
+
+	for(pos = list->first; pos != NULL; pos = pos->next)
+		counter++;
+
+	return counter;
+}
 
 uint8_t delBlock(List_t* list, uint32_t blockNr){	
 	ListElem_t* position = NULL;
@@ -126,26 +135,27 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 
 	position = list->first;
 	do{
-		if(position == NULL){
+		if(position == NULL){			
 			return FALSE;
 		}
 		if( position->blockNr == blockNr){
 			if(position->next == NULL){
 				list->last = list->last->prev;
-				list->last->next = NULL;
+				list->last->next = NULL;				
 			}
 			else{
-				position->next->prev = NULL;
+				position->next->prev = position->prev;
 			}
 			if(position->prev == NULL){	
 				list->first = position->next;				
+				list->first->prev = NULL;
 			}
 			else{
-				position->prev->next = NULL;
+				position->prev->next = position->next;
 			}
 
 			list->blockCounter--;
-			free(position);
+			free(position);			
 			return TRUE;
 		}
 
@@ -206,23 +216,24 @@ uint8_t addBlock(List_t* list, uint32_t blockNr){
 		do{	
 			if(position == NULL){
 				break;
-			}
+			}						
 			if( EC(list, position->blockNr) > EC(list, blockNr)){				
 				element->next = position;
-				element->prev = position->prev;				
-				//if( position->prev == NULL){
+				element->prev = position->prev;								
 				if( list->first->blockNr == position->blockNr){
 					list->first = element;
 					position->prev = element;
 				}
-				else{					
+				else{				
+					position->prev->next = element;
 					position->prev = element;
+					
 				}
 				return TRUE;
 			}			
 
 			position = position->next ;
-		}while(position != NULL && position->blockNr != list->last->blockNr);
+		}while(position != NULL);
 
 		//an letzter Position einfügen		
 		element->prev = list->last;
