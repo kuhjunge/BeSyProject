@@ -285,8 +285,7 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 				for (i = 0; i < FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE; i++){
 					if (segmentStatus(flashDevice, deletedBlock, (FL_getPagesPerBlock()*p) + i) == assigned){
 						readBlockIntern(flashDevice, deletedBlock, p, i, data[data_position]);
-						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);
-						setMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i, 0);
+						mappingData[data_position] = getMapT(flashDevice, deletedBlock, (p * FL_getPagesPerBlock()) + i);						
 						data_position++;
 					}
 				}
@@ -555,33 +554,27 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	uint32_t count;
 	uint32_t index_old;
 	uint32_t value = -1;
-	/*if (index < 1){ // Fehlerhafter Index wurde übergeben
+	if (index < 1){ // Fehlerhafter Index wurde übergeben
 		printf("Fehlerhafter Index wurde uebergeben. Index darf nicht < 1  sein!\n");
 		printerr(flashDevice);
 		return FALSE;
-	}*/
+	}
 
 	// Der Block auf dem geschrieben wird, ist nicht beschreibbar
 	if (flashDevice->blockArray[block].status != ready){ 
 			printf("Fehler beim Schreiben des Datensatzes! Fehlerhafter Block Zugriff!\n");			
 			printerr(flashDevice);
 			return FALSE;
-	}
-	//Abfrage, ob neuer Datensatz geschrieben wird, oder alter wiederbeschrieben => hochzählen logBlockCounter
-	if( mapping(flashDevice, index) != 0 ){
-		flashDevice->logBlockCounter++;
-	}
+	}	
 
 	count = FL_writeData(block, page, bp_index * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Daten beschreiben
 	if (count != LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten geschrieben wurden		
-		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);
-		//TODO böser Fehler, da flashDevice->logBlockCounter nicht mehr aktuell ist!!
+		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);		
 		printerr(flashDevice);
 		return FALSE;
 	}
-	if (index > 0){// TODO kann Abfrage nicht raus?
-		index_old = mapping(flashDevice, index);
-		if (index_old < MAPPING_TABLE_SIZE){
+	//Invalidiere alten Index
+	if (index_old < MAPPING_TABLE_SIZE){
 			invalidationOfOldIndex(flashDevice, (uint16_t)index_old / BLOCKSEGMENTS, (uint16_t)index_old % BLOCKSEGMENTS); // Alten Eintrag in Mapping Table und Block invalidieren
 		}
 	}
@@ -603,6 +596,9 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		value = nextBlock(flashDevice);
 		if( value == -1) 
 			return FALSE;
+		else
+			flashDevice->actWriteBlock = value;
+
 		if (flashDevice->freeBlocks <= SPARE_BLOCKS ){ // Cleaner
 			garbageCollector(flashDevice); // Clean
 		}		
@@ -671,8 +667,7 @@ flash_t * mount(flashMem_t *flashHardware){
 	}
 	// setze als ersten zu beschreibenden Block den Block 0, da alle noch gleich sind
 	flashDevice->actWriteBlock = 0;
-	flashDevice->invalidCounter = 0;
-	flashDevice->logBlockCounter = 0;
+	flashDevice->invalidCounter = 0;	
 	flashDevice->freeBlocks = FL_getBlockCount() ;
 	
 	// Initialisiere Pools
