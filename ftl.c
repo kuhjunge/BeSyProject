@@ -230,6 +230,11 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 			printf("\n");
 			printList(pool);
 			delBlock(pool, deletedBlock);			
+			printf("-----\n");
+				printList(flashDevice->coldPool);
+				printList(flashDevice->neutralPool);
+				printList(flashDevice->hotPool);
+				printf("-----\n");
 			addBlock(pool, deletedBlock);
 			printList(pool);
 			printf("\n");	
@@ -262,14 +267,29 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 			//Update des Blocks in Pool
 			if(inPool == 1){									
 				delBlock(flashDevice->neutralPool, deletedBlock);
+				printf("-----\n");
+				printList(flashDevice->coldPool);
+				printList(flashDevice->neutralPool);
+				printList(flashDevice->hotPool);
+				printf("-----\n");
 				addBlock(flashDevice->neutralPool, deletedBlock);
 			}
 			if(inPool == 2){
 				delBlock(flashDevice->hotPool, deletedBlock);
+				printf("-----\n");
+				printList(flashDevice->coldPool);
+				printList(flashDevice->neutralPool);
+				printList(flashDevice->hotPool);
+				printf("-----\n");
 				addBlock(flashDevice->hotPool, deletedBlock);			
 			}
 			if(inPool == 3){
 				delBlock(flashDevice->coldPool, deletedBlock);
+				printf("-----\n");
+				printList(flashDevice->coldPool);
+				printList(flashDevice->neutralPool);
+				printList(flashDevice->hotPool);
+				printf("-----\n");
 				addBlock(flashDevice->coldPool, deletedBlock);			
 			}
 
@@ -295,12 +315,16 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 		//für gelöschten Block (Condition 1 / 2) 
 		if( flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->AVG + THETA ){
 			delBlock(flashDevice->neutralPool, deletedBlock);
-			addBlock(flashDevice->hotPool, deletedBlock);			
+			addBlock(flashDevice->hotPool, deletedBlock);	
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
+			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
 
 		}
 		if( flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->AVG - THETA ){
 			delBlock(flashDevice->neutralPool, deletedBlock);
-			addBlock(flashDevice->coldPool, deletedBlock);
+			addBlock(flashDevice->coldPool, deletedBlock);			
+			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
+			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
 		}			
 		//lösche deletedBlock
 		printf("del in neutral\n");
@@ -408,6 +432,7 @@ void garbageCollector(flash_t *flashDevice){
 	if (level < 1){
 		level = 1;
 	}
+	level = 1;
 	// Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden				
 	while (flashDevice->freeBlocks < SPARE_BLOCKS  && k < FL_getBlockCount () ){ 		
 		if( i >= FL_getBlockCount() - 1){
@@ -423,7 +448,7 @@ void garbageCollector(flash_t *flashDevice){
 		}
 		k++;		
 	}
-	if (k == FL_getBlockCount && flashDevice->freeBlocks < SPARE_BLOCKS){
+	if (k == FL_getBlockCount() && flashDevice->freeBlocks < SPARE_BLOCKS){
 		printf("Fehler beim Cleanen, nicht genug Blöcke befreit!\n");
 		printerr(flashDevice);
 	}
@@ -573,10 +598,11 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		else{
 			flashDevice->actWriteBlock = value;
 		}
-		// Cleaner
+		// Cleaner		
 		if (flashDevice->freeBlocks < SPARE_BLOCKS ){
 			// Clean
 			garbageCollector(flashDevice); 
+			//flashDevice->actWriteBlock = nextBlock(flashDevice);//TODO nach oben verlagern
 		}		
 	}
 	return TRUE;
@@ -786,10 +812,10 @@ void printerr(flash_t *flashDevice){
 					if (segmentStatus(flashDevice, i, j) > 2){ error = '?'; }
 					printf("Segment %02i: Table: %03i - %i %c %c\n", j, getMapT(flashDevice, i, j), segmentStatus(flashDevice, i, j), error, marker);
 				}
-				printf("Segment: empty (0) / assigned (1) / invalid (2)\n");
-				printerr(flashDevice);
+				printf("Segment: empty (0) / assigned (1) / invalid (2)\n");				
 				getchar();
 			}
 		}
+		printerr(flashDevice);
 	}
 }

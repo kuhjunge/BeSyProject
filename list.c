@@ -264,3 +264,16 @@ uint32_t getLastBlock(List_t* list){
 		return -1;
 	}
 }
+
+void calculateAVG(List_t* list, uint32_t value, uint8_t plus){
+	if(plus == TRUE){
+		list->AVG = list->AVG * (list->blockCounter - 1); 
+		list->AVG = list->AVG - value;
+		list->AVG = list->AVG / list->blockCounter;
+	}
+	else{
+		list->AVG = list->AVG * (list->blockCounter + 1); 
+		list->AVG = list->AVG + value;
+		list->AVG = list->AVG / list->blockCounter;
+	}
+}

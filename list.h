@@ -82,4 +82,11 @@ void printList(List_t* list);
 */
 uint16_t EC(List_t* list, uint32_t blockNr);
 
+/*
+*	Passt die AVG an
+*	value ist der abzuziehende/zuzuaddierende Wert
+*	plus ist als boolscher Wert zu interpretieren
+*/
+void calculateAVG(List_t* list, uint32_t value, uint8_t plus);
+
 #endif  /* __LIST__ */ 

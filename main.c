@@ -67,7 +67,7 @@ void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_
 				myData[j] = (uint8_t)(65 + rand() % 20);
 			}
 			//Zufall logischer Block
-			l = (rand() % blocks) + 1;
+			l = (rand() % blocks) ;
 			//schreibe
 			writeBlock(ssd, l, myData);
 			//lese
