@@ -9,9 +9,9 @@ TODO: Die MAPPING_TABLE_SIZE und BLOCKSEGMENTS dürfen nicht auf Konstanten aus d
 #define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
 #define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
 // Cleaner Konstanten
-#define SPARE_BLOCKS 2																// Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
+#define SPARE_BLOCKS 2															// Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
-#define THETA 10																// Definiert die Größe des neutralen Pools	
+#define THETA 1																// Definiert die Größe des neutralen Pools	
 #define DELTA 1	// Definiert den Bereich für BlockNeutralisationen
 //allgemeine Konstante
 #define LOG_BLOCK_COUNT ((BLOCK_COUNT * BLOCKSEGMENTS) - SPARE_BLOCKS)
