@@ -24,21 +24,6 @@ void recalculationAVG(List_t* list){
 	list->AVG += (double) 1 / list->blockCounter;
 }
 
-void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus){	
-	double temp;
-
-	if( plus == TRUE){
-		 temp = list->AVG * (list->blockCounter-1);
-		 temp = temp + deleteCounter;
-		 list->AVG = (double)temp / list->blockCounter;
-	}
-	else{
-		temp = list->AVG * (list->blockCounter+1);
-		temp = temp - deleteCounter;
-		list->AVG = (double)temp / list->blockCounter;
-	}
-}
-
 ListElem_t* showFirstElement(List_t* list){
 	if(list->blockCounter <= 0){
 		return NULL;

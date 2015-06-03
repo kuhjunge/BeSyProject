@@ -45,11 +45,6 @@ uint32_t getLastBlock(List_t* list);
 */
 void recalculationAVG(List_t* list);
 
-/*
- *	Addiert/Subtrahiert den übergebenden deleteCounter vom AVG
- *	plus ist als boolscher Wert zu interpretieren, TRUE== addiere, FALSE==subtrahiere
- */
-void calculateAVG(List_t* list, uint32_t deleteCounter, uint8_t plus);
 
 /*
 *	Überprüft, ob gegebene Blocknummer in dieser List enthalten ist
