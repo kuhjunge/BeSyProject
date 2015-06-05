@@ -226,18 +226,9 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 			pool->AVG += (double) (EC(flashDevice->neutralPool, tempBlock) - EC(pool, deletedBlock)) / pool->blockCounter;
 			flashDevice->AVG += (double) (EC(pool, deletedBlock) - EC(flashDevice->neutralPool, tempBlock)) / FL_getBlockCount();
 			
-			//Update des Blocks in Pool
-			printf("\n");
-			printList(pool);
-			delBlock(pool, deletedBlock);			
-			printf("-----\n");
-				printList(flashDevice->coldPool);
-				printList(flashDevice->neutralPool);
-				printList(flashDevice->hotPool);
-				printf("-----\n");
+			//Update des Blocks in Pool			
+			delBlock(pool, deletedBlock);						
 			addBlock(pool, deletedBlock);
-			printList(pool);
-			printf("\n");	
 }
 
 
@@ -247,9 +238,7 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 	uint8_t data2[LOGICAL_BLOCK_DATASIZE];
 	uint32_t mappingData[BLOCKSEGMENTS];
 	uint16_t data_position = 0;
-
-	printf("deletedblock=%i, invalidsegmentsInBlock=%i, writePos=%i, statusBlock=%i, delC=%i \n", deletedBlock, flashDevice->blockArray[deletedBlock].invalidCounter, flashDevice->blockArray[deletedBlock].writePos, flashDevice->blockArray[deletedBlock].status,flashDevice->blockArray[deletedBlock].deleteCounter);
-
+	
 	//Lösche Block
 	// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
 			for (p = 0; p < BLOCKSEGMENTS; p++){								
@@ -266,38 +255,25 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 			cleanBlock(flashDevice, deletedBlock);
 			//Update des Blocks in Pool
 			if(inPool == 1){									
-				delBlock(flashDevice->neutralPool, deletedBlock);
-				printf("-----\n");
-				printList(flashDevice->coldPool);
-				printList(flashDevice->neutralPool);
-				printList(flashDevice->hotPool);
-				printf("-----\n");
+				delBlock(flashDevice->neutralPool, deletedBlock);				
 				addBlock(flashDevice->neutralPool, deletedBlock);
 			}
 			if(inPool == 2){
-				delBlock(flashDevice->hotPool, deletedBlock);
-				printf("-----\n");
-				printList(flashDevice->coldPool);
-				printList(flashDevice->neutralPool);
-				printList(flashDevice->hotPool);
-				printf("-----\n");
-				addBlock(flashDevice->hotPool, deletedBlock);			
+				delBlock(flashDevice->hotPool, deletedBlock);				
+				addBlock(flashDevice->hotPool, deletedBlock);
 			}
 			if(inPool == 3){
-				delBlock(flashDevice->coldPool, deletedBlock);
-				printf("-----\n");
-				printList(flashDevice->coldPool);
-				printList(flashDevice->neutralPool);
-				printList(flashDevice->hotPool);
-				printf("-----\n");
-				addBlock(flashDevice->coldPool, deletedBlock);			
+				delBlock(flashDevice->coldPool, deletedBlock);				
+				addBlock(flashDevice->coldPool, deletedBlock);				
 			}
 
 			//schreibe Daten zurück in gelöschten Block
 			for (i = 0; i < data_position; i++){
 				setMapT(flashDevice, deletedBlock, flashDevice->blockArray[deletedBlock].writePos, mappingData[i]);
 				writeSegmentToBlock(flashDevice, data[i], deletedBlock);
-			}			
+			}	
+			//setze flashDevice->aktWriteBlock neu
+			flashDevice->actWriteBlock = nextBlock(flashDevice);
 }
 
 void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){		
@@ -313,21 +289,26 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 
 		//Grouping			
 		//für gelöschten Block (Condition 1 / 2) 
-		if( flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->AVG + THETA ){
-			delBlock(flashDevice->neutralPool, deletedBlock);
-			addBlock(flashDevice->hotPool, deletedBlock);	
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
-			calculateAVG(flashDevice->hotPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
+		if( EC(flashDevice->neutralPool, deletedBlock) > flashDevice->AVG + THETA ){
+			if( delBlock(flashDevice->neutralPool, deletedBlock) == TRUE) {
+				addBlock(flashDevice->hotPool, deletedBlock);	
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
+				calculateAVG(flashDevice->hotPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
+				deleteBlock(flashDevice, deletedBlock, 2);
+				return;
+			}
 
 		}
-		if( flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->AVG - THETA ){
-			delBlock(flashDevice->neutralPool, deletedBlock);
-			addBlock(flashDevice->coldPool, deletedBlock);			
-			calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
-			calculateAVG(flashDevice->coldPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
+		if( EC(flashDevice->neutralPool, deletedBlock) < flashDevice->AVG - THETA ){
+			if( delBlock(flashDevice->neutralPool, deletedBlock) == TRUE ){				
+				addBlock(flashDevice->coldPool, deletedBlock);			
+				calculateAVG(flashDevice->neutralPool, flashDevice->blockArray[deletedBlock].deleteCounter, FALSE);
+				calculateAVG(flashDevice->coldPool, flashDevice->blockArray[deletedBlock].deleteCounter, TRUE);
+				deleteBlock(flashDevice, deletedBlock, 3);
+				return;
+			}
 		}			
-		//lösche deletedBlock
-		printf("del in neutral\n");
+		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 1);
 	}
 	//erase operation in hot pool
@@ -344,8 +325,7 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 			return;
 		}
 		
-		//lösche deletedBlock
-		printf("del in hot\n");
+		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 2);
 	}
 	//erase operation in cold pool
@@ -353,20 +333,17 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
-
+		
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
 			//Neutralisation
 			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);
 			return;			
 		}
-
-		//lösche deletedBlock
-		printf("del in cold\n");
+		
+		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 3);
-	}
-		
-		
+	}	
 
 }
 

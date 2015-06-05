@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
 	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 480, 50000, 16);
+	test_write_random_n_locigalBlocks( 480, 10000, 16);
 
 	//mount_test_Light();
 

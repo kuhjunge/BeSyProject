@@ -43,11 +43,21 @@ ListElem_t* showLastElement(List_t* list){
 }
 
 ListElem_t* getPrevElement(ListElem_t* elem){
-	return elem->prev;	
+	if(elem == NULL){
+		return NULL;
+	}
+	else{
+		return elem->prev;	
+	}
 }
 
 ListElem_t* getNextElement(ListElem_t* elem){
-	return elem->next;	
+	if(elem == NULL){
+		return NULL;
+	}
+	else{
+		return elem->next;	
+	}
 }
 
 void printList(List_t* list){
@@ -268,12 +278,12 @@ uint32_t getLastBlock(List_t* list){
 void calculateAVG(List_t* list, uint32_t value, uint8_t plus){
 	if(plus == TRUE){
 		list->AVG = list->AVG * (list->blockCounter - 1); 
-		list->AVG = list->AVG - value;
-		list->AVG = list->AVG / list->blockCounter;
+		list->AVG = list->AVG + value;
+		list->AVG = list->AVG / (list->blockCounter + 1);
 	}
 	else{
-		list->AVG = list->AVG * (list->blockCounter + 1); 
-		list->AVG = list->AVG + value;
-		list->AVG = list->AVG / list->blockCounter;
+		list->AVG = list->AVG * (list->blockCounter - 1); 
+		list->AVG = list->AVG - value;
+		list->AVG = list->AVG / (list->blockCounter + 1);
 	}
 }
