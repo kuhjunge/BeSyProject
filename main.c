@@ -68,6 +68,7 @@ void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_
 			}
 			//Zufall logischer Block
 			l = (rand() % blocks) ;
+			printf("%i/%i\n",i,range);
 			//schreibe
 			writeBlock(ssd, l, myData);
 			//lese
@@ -88,7 +89,7 @@ void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_
 	printf("test_write_n_logicalBlocks() beendet");
 }
 
-void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range){
+void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range, uint16_t charNumber){
 	uint16_t i, l, j;
 	uint16_t k = 0;
 
@@ -99,22 +100,20 @@ void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-
-	for (i = 0; i < 16; i++)
-		myData[i] = (uint8_t)(i + 65);
-
+	
 	for(i = 0; i < range; i++)
 		for(l = 1; l <= blocks; l++){
 			//zufällige Zeichenfolge
-			for (j = 0; j < 16; j++){
+			for (j = 0; j < charNumber; j++){
 				myData[j] = (uint8_t)(65 + rand() % 20);
 			}
+			printf("%i/%i\n",i,range);
 			//schreibe
 			writeBlock(ssd, l, myData);
 			//lese
 			readBlock(ssd, l, myRetData);
 			//überprüfe
-			for(k = 0; k < 16; k++){
+			for(k = 0; k < charNumber; k++){
 				if(myData[k] != myRetData[k]){
 					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
 					printerr(ssd);
@@ -130,7 +129,7 @@ void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range){
 }
 
 
-void test_write_one_logicalBlock(uint16_t range){
+void test_write_one_logicalBlock(uint16_t range, uint16_t charNumber){
 	uint16_t i,j;
 	uint16_t k = 0;
 
@@ -145,15 +144,16 @@ void test_write_one_logicalBlock(uint16_t range){
 	
 	for(i = 0; i < range; i++){
 		//zufällige Zeichenfolge
-		for (j = 0; j < 16; j++){
+		for (j = 0; j < charNumber; j++){
 			myData[j] = (uint8_t)(65 + rand() % 20);
 		}
+		printf("%i/%i\n",i,range);
 		//schreibe
 		writeBlock(ssd, 1, myData);
 		//lese
 		readBlock(ssd, 1, myRetData);
 		//überprüfe
-		for(k = 0; k < 16; k++){
+		for(k = 0; k < charNumber; k++){
 			if(myData[k] != myRetData[k]){
 				printf("Fehler beim Lesen nach %i Zugriffen\n",i);
 				printerr(ssd);
@@ -299,14 +299,14 @@ int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
 
 	//schreibe wiederholt einen logischen Block
-	//test_write_one_logicalBlock(20000); 
+	//test_write_one_logicalBlock(20000, LOGICAL_BLOCK_DATASIZE); 
 
 	//schreibe wiederholt verschiedene logische Blöcke	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 480, 100 );		
+	//test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 480, 20000, 16);
+	//test_write_random_n_locigalBlocks( 480, 20000, LOGICAL_BLOCK_DATASIZE);
 
 	//mount_test_Light();
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 

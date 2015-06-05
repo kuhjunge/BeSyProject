@@ -114,7 +114,7 @@ uint8_t writeSegmentToBlock(flash_t* flashDevice, uint8_t* segment, uint32_t blo
 
 	flashDevice->blockArray[block].writePos++;	
 	// Block ist komplett gefüllt	
-	if (flashDevice->blockArray[block].writePos == BLOCKSEGMENTS ){
+	if (flashDevice->blockArray[block].writePos >= BLOCKSEGMENTS ){
 		flashDevice->blockArray[block].status = used;
 		flashDevice->freeBlocks--;
 	}
@@ -164,21 +164,7 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 						//Adressupdate																				
 						setMapT(flashDevice, deletedBlock, p, tempAddress);
 					}
-			}
-
-			//falls Min/Max(neutralPool) komplett voll war, lösche diesen Block			
-			if(hotNeutralisation == TRUE){							
-				blockNr = showFirstElement(flashDevice->neutralPool)->blockNr;				
-			}
-			else{
-				blockNr = showLastElement(flashDevice->neutralPool)->blockNr;
-			}
-			if( flashDevice->blockArray[blockNr].status == used) {
-				cleanBlock(flashDevice, blockNr);
-				recalculationAVG(flashDevice->neutralPool);
-				delBlock(flashDevice->neutralPool, blockNr);
-				addBlock(flashDevice->neutralPool, blockNr);
-			}			
+			}		
 
 			//step 4 kopiere aus tempBlock(data) in MAX(neutralPool)/Min(neutralPool)
 			// und step 5 update der Adressen
@@ -208,8 +194,7 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 							position = getNextElement(position);
 						}
 						if (position == NULL){						
-							blockNr = nextBlock(flashDevice);
-							return;
+							blockNr = nextBlock(flashDevice);							
 						}
 					}
 					else{
@@ -263,14 +248,12 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 				delBlock(flashDevice->coldPool, deletedBlock);				
 				addBlock(flashDevice->coldPool, deletedBlock);				
 			}
-						
+		
 			//schreibe Daten zurück 
 			for (i = 0; i < data_position; i++){
 				setMapT(flashDevice, deletedBlock, flashDevice->blockArray[deletedBlock].writePos, mappingData[i]);
 				writeSegmentToBlock(flashDevice, data[i], deletedBlock);
-			}							
-			//setze den aktuell beschreibbaren Block
-			flashDevice->actWriteBlock = deletedBlock;
+			}				
 }
 
 void grouping(flash_t* flashDevice){
@@ -305,12 +288,13 @@ void wearLeveling(flash_t* flashDevice, uint32_t deletedBlock){
 		
 		//Average Recalculation Neutral
 		recalculationAVG(flashDevice->neutralPool);		
-						
+	
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 1);
-
+				
 		//Grouping für alle Blöcke in neutralPool
 		grouping(flashDevice);
+		
 	}
 	//erase operation in hot pool
 	if (isElementOfList(flashDevice->hotPool, deletedBlock) == TRUE){
@@ -405,20 +389,12 @@ void garbageCollector(flash_t *flashDevice){
 	uint16_t i = flashDevice->actWriteBlock;
 	uint32_t k = 0;		
 	uint32_t level = flashDevice->invalidCounter / (FL_getBlockCount()); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
-	uint32_t counter = 0;
-	uint32_t data[BLOCK_COUNT];
-	uint32_t maxInvalid[2];
-
-	//Zähle höchstes Invalides Vorkommen und seine Position
-	maxInvalid[0] = 0;
-	maxInvalid[1] = 0;
-
+	
 	// Verhindern dass Blöcke ohne invalide einträge gecleant werden
 	if (level < 1){
 		level = 1;
 	}	
 		
-	printf("-----------------------------------------------\n");
 	// Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden				
 	while (flashDevice->freeBlocks < SPARE_BLOCKS  && k < FL_getBlockCount () ){ 		
 		if( i >= FL_getBlockCount() - 1){
@@ -429,20 +405,15 @@ void garbageCollector(flash_t *flashDevice){
 		}
 				
 		// Wenn Block über Schwellwert liegt und benutzt wird				
-		if ( flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status == used){ 		
-			if( maxInvalid[0] <= flashDevice->blockArray[i].invalidCounter){
-				maxInvalid[0] = flashDevice->blockArray[i].invalidCounter;
-				maxInvalid[1] = counter;
-			}
-			data[counter] = i;	
-			counter++;
+		if ( flashDevice->blockArray[i].invalidCounter >= level && flashDevice->blockArray[i].status == used){ 					
+			wearLeveling(flashDevice, i) ;	
 		}
 		k++;		
 	}
-	//WearLeveling für used Block mit höchsten invalidCounter
-	printf("wearlevel counter = %i ; data[] = %i\n", counter, data[maxInvalid[1]]);
-	wearLeveling(flashDevice, data[maxInvalid[1]]) ;						
-	printf("-------------------------------------------------\n");
+	//Korrektur der freeBlock-Anzahl TODO: ohne gehts nicht
+	if( flashDevice->freeBlocks == 3){
+		flashDevice->freeBlocks--;	
+	}
 	if (k == FL_getBlockCount() && flashDevice->freeBlocks < SPARE_BLOCKS){
 		printf("Fehler beim Cleanen, nicht genug Blöcke befreit!\n");
 		printerr(flashDevice);
