@@ -303,11 +303,10 @@ int main(int argc, char *argv[]) {
 
 	//schreibe wiederholt verschiedene logische Blöcke	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 480, 100 );	
-	//test_write_n_locigalBlocks((FL_getBlockCount() - SPARE_BLOCKS )* BLOCKSEGMENTS);
+	//test_write_n_locigalBlocks( 480, 100 );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 480, 10000, 16);
+	test_write_random_n_locigalBlocks( 480, 20000, 16);
 
 	//mount_test_Light();
 

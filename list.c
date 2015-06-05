@@ -149,7 +149,9 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 				position->prev->next = position->next;
 			}
 
+			list->AVG = list->AVG * list->blockCounter - list->blockArray[blockNr].deleteCounter;
 			list->blockCounter--;
+			list->AVG = (double)list->AVG / list->blockCounter;
 			free(position);			
 			return TRUE;
 		}
@@ -180,7 +182,7 @@ uint8_t addBlock(List_t* list, uint32_t blockNr){
 
 	// 0 Elemente in Liste
 	if( list->blockCounter == 0){
-		list->AVG = 0;
+		list->AVG = list->blockArray[blockNr].deleteCounter;
 		list->blockCounter = 1;
 		list->first = element;
 		list->last = element;
@@ -199,13 +201,17 @@ uint8_t addBlock(List_t* list, uint32_t blockNr){
 			list->first->next = element;
 		}
 				
+		list->AVG = list->AVG + list->blockArray[blockNr].deleteCounter;
 		list->blockCounter++;
+		list->AVG = (double)list->AVG / list->blockCounter;
 		return TRUE;
 	}
 	// mehr als 1 Elemente in Liste
 	if( list->blockCounter > 1){		
 
+		list->AVG = list->AVG * list->blockCounter + list->blockArray[blockNr].deleteCounter;
 		list->blockCounter++;
+		list->AVG = (double)list->AVG / list->blockCounter;
 		
 		position = list->first;		
 		do{	
@@ -272,18 +278,5 @@ uint32_t getLastBlock(List_t* list){
 	}
 	else{
 		return -1;
-	}
-}
-
-void calculateAVG(List_t* list, uint32_t value, uint8_t plus){
-	if(plus == TRUE){
-		list->AVG = list->AVG * (list->blockCounter - 1); 
-		list->AVG = list->AVG + value;
-		list->AVG = list->AVG / (list->blockCounter + 1);
-	}
-	else{
-		list->AVG = list->AVG * (list->blockCounter - 1); 
-		list->AVG = list->AVG - value;
-		list->AVG = list->AVG / (list->blockCounter + 1);
 	}
 }
