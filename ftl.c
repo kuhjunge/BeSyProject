@@ -245,9 +245,9 @@ void neutralisation(flash_t* flashDevice, List_t* pool, uint32_t deletedBlock, u
 
 			//free für allozierte Variablen
 		    free(mappingData);
-			for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
+			/*for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
 				free(data[i]);
-			}
+			}*///TODO nachfragen wie zu free-en ist
 			free(data);
 }
 
@@ -311,9 +311,11 @@ void deleteBlock(flash_t* flashDevice, uint32_t deletedBlock, uint16_t inPool){
 
 			//free für allozierte Variablen
 		    free(mappingData);
-			for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
-				free(data[i]);
-			}
+			/*for(i = 0; i < getBlockSegmentCount(); i++){
+				for(p = 0; p < LOGICAL_BLOCK_DATASIZE; p++){
+					free(data[i][p]);
+				}
+			}*/
 			free(data);
 }
 
