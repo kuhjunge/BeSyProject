@@ -83,9 +83,9 @@ void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_
 			}
 		}
 
-	printf("Unmount\n");
-	ssd = unmount(ssd);
 	printerr(ssd);
+	printf("Unmount\n");
+	ssd = unmount(ssd);	
 	printf("test_write_n_logicalBlocks() beendet");
 }
 
@@ -122,9 +122,9 @@ void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range, uint16_t charNu
 			}
 		}
 
-	printf("Unmount\n");
-	ssd = unmount(ssd);
 	printerr(ssd);
+	printf("Unmount\n");
+	ssd = unmount(ssd);	
 	printf("test_write_n_logicalBlocks() beendet");
 }
 
@@ -162,9 +162,9 @@ void test_write_one_logicalBlock(uint16_t range, uint16_t charNumber){
 		}
 	}
 
-	printf("Unmount\n");
-	ssd = unmount(ssd);
 	printerr(ssd);
+	printf("Unmount\n");
+	ssd = unmount(ssd);	
 	printf("test_write_one_logicalBlock() beendet");
 }
 void load_test_Random_Full(){
@@ -201,6 +201,7 @@ void overload_test_Random(){
 	printf("overload_test_Random Ende");
 }
 
+/*
 void mount_test_Light(){
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
@@ -217,7 +218,7 @@ void mount_test_Light(){
 	ssd = mount(&flMe);
 	printerr(ssd);
 	printf("mount_test_Light Ende");
-}
+}*/
 
 void load_test_Random_Light(){
 	printf("Mount \n");
@@ -257,6 +258,7 @@ void load_test_OS(){
 	printf("load_test_OS Ende");
 }
 
+/*
 // Test ergänzen der Zahlen 1 - n mit Index 1 - n in den Speicher schreibt und anschließend wieder ausliest und prüft
 void mapping_test(){
 	uint32_t i, j;
@@ -293,7 +295,7 @@ void mapping_test(){
 	ssd = unmount(ssd);
 	printf("Mappingtest erfolgreich\n");
 	printerr(ssd);
-}
+}*/
 
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
@@ -303,10 +305,10 @@ int main(int argc, char *argv[]) {
 
 	//schreibe wiederholt verschiedene logische Blöcke	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 480, 1000,LOGICAL_BLOCK_DATASIZE );		
+	test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
+	//test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
 
 	//mount_test_Light();
 

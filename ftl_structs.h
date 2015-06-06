@@ -1,20 +1,17 @@
 #ifndef __FTL_STRUCT__
 #define __FTL_STRUCT__
 
-/*
-TODO: Die MAPPING_TABLE_SIZE und BLOCKSEGMENTS dürfen nicht auf Konstanten aus der Aufgabenstellung basieren und müssen deshalb geändert werden (alloc & lokale Variablen)
-*/
 // Allocator Konstanten
-#define LOGICAL_BLOCK_DATASIZE 16													// Logische Blockgröße des OS
-#define BLOCKSEGMENTS (PAGE_DATASIZE * PAGES_PER_BLOCK  / LOGICAL_BLOCK_DATASIZE )  // Speichersegmente pro Block
-#define MAPPING_TABLE_SIZE (BLOCK_COUNT * BLOCKSEGMENTS )							
+// Logische Blockgröße des OS
+#define LOGICAL_BLOCK_DATASIZE 16													
 // Cleaner Konstanten
-#define SPARE_BLOCKS 2															// Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
+// Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
+#define SPARE_BLOCKS 2	
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
-#define THETA 10															// Definiert die Größe des neutralen Pools	
-#define DELTA 5	// Definiert den Bereich für BlockNeutralisationen
-//allgemeine Konstante
-#define LOG_BLOCK_COUNT ( (BLOCK_COUNT - SPARE_BLOCKS) * BLOCKSEGMENTS) 
+// Definiert die Größe des neutralen Pools	
+#define THETA 10				
+// Definiert den Bereich für BlockNeutralisationen
+#define DELTA 5	
 
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
@@ -89,8 +86,8 @@ typedef struct {
 */
 typedef struct flash_struct
 {	
-	uint32_t mappingTable[MAPPING_TABLE_SIZE];//[BLOCK_COUNT * PAGES_PER_BLOCK * (PAGE_DATASIZE / LOGICAL_BLOCK_DATASIZE)]; // Übersetzungstabelle
-	Block_t blockArray[BLOCK_COUNT]; // Block Verwaltungsstruktur
+	uint32_t* mappingTable; // Übersetzungstabelle
+	Block_t* blockArray; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;	
 	uint32_t freeBlocks;
 	uint32_t actWriteBlock;
