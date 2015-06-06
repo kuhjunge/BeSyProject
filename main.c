@@ -303,10 +303,10 @@ int main(int argc, char *argv[]) {
 
 	//schreibe wiederholt verschiedene logische Blöcke	
 	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
+	//test_write_n_locigalBlocks( 480, 1000,LOGICAL_BLOCK_DATASIZE );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	//test_write_random_n_locigalBlocks( 480, 20000, LOGICAL_BLOCK_DATASIZE);
+	test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
 
 	//mount_test_Light();
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
