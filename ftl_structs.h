@@ -37,9 +37,9 @@ typedef enum
 
 /*	Datenstruktur für die Blockverwaltung
 *	segmentStatus Array mit den Status der einzelnen segmente eines Blocks
-*  deleteCounter hält fest wie oft der Block gelöscht wurde
-*  invalidCounter hält fest wie viele Segmente in diesem Block invalid markiert sind
-*  status hält die Status des Blockes fest -> [BlockStatus_t]
+ * deleteCounter hält fest wie oft der Block gelöscht wurde
+ * invalidCounter hält fest wie viele Segmente in diesem Block invalid markiert sind
+ * status hält die Status des Blockes fest -> [BlockStatus_t]
 */
 typedef struct Block_struct
 {
@@ -56,8 +56,8 @@ typedef struct Block_struct
 *	blockNr Position des Blocks in flash_t.blockArray
 */
 typedef struct ListElem {
-	struct ListElem* prev;
-	struct ListElem* next;
+	struct ListElem *prev;
+	struct ListElem *next;
 	uint32_t blockNr;
 } ListElem_t;
 
@@ -69,32 +69,32 @@ typedef struct ListElem {
 *	blockArray Pointer auf das verwendete Blockarray des ftl
 */
 typedef struct {
-	ListElem_t* first;
-	ListElem_t* last;
+	ListElem_t *first;
+	ListElem_t *last;
 	double AVG;
 	uint32_t blockCounter;
-	Block_t* blockArray;
+	Block_t *blockArray;
 } List_t;
 
 /*	Datenstruktur für den FTL
 *	mappingTable Tabelle in der das Mapping gespeichert wird
-*  blockArray Array mit Block Datenstruktur zur Verwaltung der Blöcke-> Siehe Block_t
-*  invalidCounter Zählt die invaliden Segmente im gesammten FTL
-*  activeBlockPosition Aktuelle Schreibposition
-*  freeBlocks Anzahl der freien Blocks die zum Schreibzugriff zur verfügung stehen
+ * blockArray Array mit Block Datenstruktur zur Verwaltung der Blöcke-> Siehe Block_t
+ * invalidCounter Zählt die invaliden Segmente im gesammten FTL
+ * activeBlockPosition Aktuelle Schreibposition
+ * freeBlocks Anzahl der freien Blocks die zum Schreibzugriff zur verfügung stehen
 *	TODO Kommentare zu List_t ergänzen
 */
 typedef struct flash_struct
 {	
-	uint32_t* mappingTable; // Übersetzungstabelle
-	Block_t* blockArray; // Block Verwaltungsstruktur
+	uint32_t *mappingTable; // Übersetzungstabelle
+	Block_t *blockArray; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;	
 	uint32_t freeBlocks;
 	uint32_t actWriteBlock;
-	List_t* hotPool;
-	List_t* coldPool;
-	List_t* neutralPool;
+	List_t *hotPool;
+	List_t *coldPool;
+	List_t *neutralPool;
 	double AVG;// globaler AVG
 } flash_t;
 
-#endif  /* __FTL_STRUCT__ */ 
+#endif  /*__FTL_STRUCT__ */ 

@@ -3,8 +3,8 @@
 
 // Lokale Funktionsimplementation List
 ////////////////////////////////////////////////////////////////////
-List_t* initList(Block_t* blockArray){
-	List_t* list = (List_t*)malloc(sizeof(List_t));
+List_t *initList(Block_t *blockArray){
+	List_t *list = (List_t*)malloc(sizeof(List_t));
 	list->AVG = 0;
 	list->blockArray = blockArray;
 	list->blockCounter = 0;
@@ -13,18 +13,18 @@ List_t* initList(Block_t* blockArray){
 	return list;
 }
 
-void freeList(List_t* list){
+void freeList(List_t *list){
 	while(list->blockCounter > 0){
 		getFirstBlock(list);
 	}
 	free(list);
 }
 
-void recalculationAVG(List_t* list){	
+void recalculationAVG(List_t *list){	
 	list->AVG += (double) 1 / list->blockCounter;
 }
 
-ListElem_t* showFirstElement(List_t* list){
+ListElem_t *showFirstElement(List_t *list){
 	if(list->blockCounter <= 0){
 		return NULL;
 	}
@@ -33,7 +33,7 @@ ListElem_t* showFirstElement(List_t* list){
 	}
 }
 
-ListElem_t* showLastElement(List_t* list){
+ListElem_t *showLastElement(List_t *list){
 	if(list->blockCounter <= 0){
 		return NULL;
 	}
@@ -42,7 +42,7 @@ ListElem_t* showLastElement(List_t* list){
 	}
 }
 
-ListElem_t* getPrevElement(ListElem_t* elem){
+ListElem_t *getPrevElement(ListElem_t *elem){
 	if(elem == NULL){
 		return NULL;
 	}
@@ -51,7 +51,7 @@ ListElem_t* getPrevElement(ListElem_t* elem){
 	}
 }
 
-ListElem_t* getNextElement(ListElem_t* elem){
+ListElem_t *getNextElement(ListElem_t *elem){
 	if(elem == NULL){
 		return NULL;
 	}
@@ -60,8 +60,8 @@ ListElem_t* getNextElement(ListElem_t* elem){
 	}
 }
 
-void printList(List_t* list){
-	ListElem_t* elem;
+void printList(List_t *list){
+	ListElem_t *elem;
 	int counter = 0;
 
 	if(list->first == NULL)
@@ -79,8 +79,8 @@ void printList(List_t* list){
 	printf("AVG: %f, AnzahlElemente: %i/%i\n", list->AVG, counter, list->blockCounter);
 }
 
-uint8_t isElementOfList(List_t* list, uint32_t blockNr){	
-	ListElem_t* position;
+uint8_t isElementOfList(List_t *list, uint32_t blockNr){	
+	ListElem_t *position;
 
 	if( list->blockCounter <= 0 || blockNr < 0){
 		return FALSE;
@@ -100,9 +100,9 @@ uint8_t isElementOfList(List_t* list, uint32_t blockNr){
 	return FALSE;
 }
 
-uint16_t countElements(List_t* list){
+uint16_t countElements(List_t *list){
 	uint16_t counter = 1;
-	ListElem_t* pos;
+	ListElem_t *pos;
 
 	for(pos = list->first; pos != NULL; pos = pos->next)
 		counter++;
@@ -110,8 +110,8 @@ uint16_t countElements(List_t* list){
 	return counter;
 }
 
-uint8_t delBlock(List_t* list, uint32_t blockNr){	
-	ListElem_t* position = NULL;
+uint8_t delBlock(List_t *list, uint32_t blockNr){	
+	ListElem_t *position = NULL;
 
 	//Fehler
 	if(list->blockCounter <= 0){
@@ -149,7 +149,7 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 				position->prev->next = position->next;
 			}
 
-			list->AVG = list->AVG * list->blockCounter - list->blockArray[blockNr].deleteCounter;
+			list->AVG = list->AVG  *list->blockCounter - list->blockArray[blockNr].deleteCounter;
 			list->blockCounter--;
 			list->AVG = (double)list->AVG / list->blockCounter;
 			free(position);			
@@ -162,13 +162,13 @@ uint8_t delBlock(List_t* list, uint32_t blockNr){
 	return FALSE;
 }
 
-uint16_t EC(List_t* list, uint32_t blockNr){
+uint16_t EC(List_t *list, uint32_t blockNr){
 	return list->blockArray[blockNr].deleteCounter;
 }
 
-uint8_t addBlock(List_t* list, uint32_t blockNr){
-	ListElem_t* element = (ListElem_t*)malloc(sizeof(ListElem_t));
-	ListElem_t* position = NULL;
+uint8_t addBlock(List_t *list, uint32_t blockNr){
+	ListElem_t *element = (ListElem_t*)malloc(sizeof(ListElem_t));
+	ListElem_t *position = NULL;
 
 	//Fehlerfall
 	if( blockNr < 0 || isElementOfList(list, blockNr) == TRUE){
@@ -209,7 +209,7 @@ uint8_t addBlock(List_t* list, uint32_t blockNr){
 	// mehr als 1 Elemente in Liste
 	if( list->blockCounter > 1){		
 
-		list->AVG = list->AVG * list->blockCounter + list->blockArray[blockNr].deleteCounter;
+		list->AVG = list->AVG  *list->blockCounter + list->blockArray[blockNr].deleteCounter;
 		list->blockCounter++;
 		list->AVG = (double)list->AVG / list->blockCounter;
 		
@@ -249,7 +249,7 @@ uint8_t addBlock(List_t* list, uint32_t blockNr){
 	return FALSE;
 }
 
-uint32_t getFirstBlock(List_t* list){
+uint32_t getFirstBlock(List_t *list){
 	uint32_t value = -1;
 
 	if(list->blockCounter <= 0){
@@ -265,7 +265,7 @@ uint32_t getFirstBlock(List_t* list){
 	}
 }
 
-uint32_t getLastBlock(List_t* list){	
+uint32_t getLastBlock(List_t *list){	
 	uint32_t value = -1;
 
 	if(list->blockCounter <= 0){

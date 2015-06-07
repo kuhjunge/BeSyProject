@@ -68,7 +68,7 @@ void test_write_random_n_locigalBlocks( uint16_t blocks, uint16_t range, uint16_
 			}
 			//Zufall logischer Block
 			l = (rand() % blocks) ;
-			printf("%i/%i\n",i,range);
+			printf("%i/%i\n",i+1,range);
 			//schreibe
 			writeBlock(ssd, l, myData);
 			//lese
@@ -107,7 +107,7 @@ void test_write_n_locigalBlocks(uint16_t blocks, uint16_t range, uint16_t charNu
 			for (j = 0; j < charNumber; j++){
 				myData[j] = (uint8_t)(65 + rand() % 20);
 			}
-			printf("%i/%i\n",i,range);
+			printf("%i/%i\n",i+1,range);
 			//schreibe
 			writeBlock(ssd, l, myData);
 			//lese
@@ -147,7 +147,7 @@ void test_write_one_logicalBlock(uint16_t range, uint16_t charNumber){
 		for (j = 0; j < charNumber; j++){
 			myData[j] = (uint8_t)(65 + rand() % 20);
 		}
-		printf("%i/%i\n",i,range);
+		printf("%i/%i\n",i+1,range);
 		//schreibe
 		writeBlock(ssd, 1, myData);
 		//lese
