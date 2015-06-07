@@ -651,6 +651,10 @@ flash_t  *mount(flashMem_t *flashHardware){
 				}
 			}
 		}
+		//TODO
+		for(i = 0; i < size; i++){
+			printf("%i,", state[i]);
+		}
 
 		//laden
 		i = 0;
