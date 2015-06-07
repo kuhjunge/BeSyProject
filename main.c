@@ -201,8 +201,8 @@ void overload_test_Random(){
 	printf("overload_test_Random Ende");
 }
 
-/*
-void mount_test_Light(){
+void mount_test_Light(uint16_t range, uint8_t charNumber){
+	uint32_t i,k,j;
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
 	ssd = mount(&flMe);
@@ -210,15 +210,63 @@ void mount_test_Light(){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-	writeData(0, 120, 1, ((BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS - 1) * 2);
+	
+	for(i = 0; i < range; i++){
+		//zufällige Zeichenfolge
+		for (j = 0; j < charNumber; j++){
+			myData[j] = (uint8_t)(65 + rand() % 20);
+		}
+	
+		printf("write data %i/%i\n",i+1,range);
+
+		//schreibe
+		writeBlock(ssd, 1, myData);
+	}
 
 	printf("Unmount\n");
 	ssd = unmount(ssd);
 	ssd = NULL;
 	ssd = mount(&flMe);
+	printf("Mount \n");
+
+	//lese
+	readBlock(ssd, 1, myRetData);
+	//überprüfe
+	for(k = 0; k < charNumber; k++){
+		if(myData[k] != myRetData[k]){
+			printf("Fehler beim Lesen\n");
+			printerr(ssd);
+			return;
+		}
+	}
+	for(i = 0; i < range; i++){
+		//zufällige Zeichenfolge
+		for (j = 0; j < charNumber; j++){
+			myData[j] = (uint8_t)(65 + rand() % 20);
+		}
+	
+		printf("write data %i/%i\n",i+1,range);
+
+		//schreibe
+		writeBlock(ssd, 1, myData);
+	}
+	//lese
+	readBlock(ssd, 1, myRetData);
+	//überprüfe
+	for(k = 0; k < charNumber; k++){
+		if(myData[k] != myRetData[k]){
+			printf("Fehler beim Lesen\n");
+			printerr(ssd);
+			return;
+		}
+	}
+
+	
 	printerr(ssd);
+	printf("Unmount\n");
+	ssd = unmount(ssd);
 	printf("mount_test_Light Ende");
-}*/
+}
 
 void load_test_Random_Light(){
 	printf("Mount \n");
@@ -308,9 +356,10 @@ int main(int argc, char *argv[]) {
 	//test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
+	//test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
 
-	//mount_test_Light();
+	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
+	mount_test_Light(1000, LOGICAL_BLOCK_DATASIZE);
 
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 	//load_test_Random_Light(); 
