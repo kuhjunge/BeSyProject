@@ -8,6 +8,7 @@ flashMem_t flMe;
 
 uint8_t myData[16], myRetData[16];
 uint16_t count;
+int blocksegment = 16;
 
 void writeData(int start, int amount, int rnd, int tc){
 	int i;
@@ -26,23 +27,23 @@ void writeData(int start, int amount, int rnd, int tc){
 				k = 0;
 			}
 		}
-		printf("Write\n");
+		printf(".");
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);
 
 		writeBlock(ssd, r, myData);
 
-		printf("Read\n");
+		//printf("*");
 		readBlock(ssd, r, myRetData);
 		if (myRetData[0] != 'A'){
 			printf("Lesefehler\n\n");
 			printerr(ssd);
 		}
-		for (i = 0; i < 16; i++)
+		/*for (i = 0; i < 16; i++)
 		{
 			printf("%c", myRetData[i]);
 		}
-		printf("\n");
+		printf("\n");*/
 	}
 }
 
@@ -306,10 +307,10 @@ void load_test_OS(){
 	printf("load_test_OS Ende");
 }
 
-/*
+
 // Test ergänzen der Zahlen 1 - n mit Index 1 - n in den Speicher schreibt und anschließend wieder ausliest und prüft
-void mapping_test(){
-	uint32_t i, j;
+void mapping_test(int multiplFactor){
+	uint32_t i, j, k;
 	uint8_t checkvalue;
 	printf("Mount \n");
 	FL_resetFlash(); // Start der Simulation
@@ -318,32 +319,35 @@ void mapping_test(){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-	printf("Write Prev\n");
-	writeData(0, 480, 1, BLOCK_COUNT * BLOCKSEGMENTS); // Speicher vorbeschreiben			
-	printf("Write\n"); // Sortiertes Schreiben	
-	for (i = 0; i <=( BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS ; i++){	
-		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
-			checkvalue = (uint8_t)((i * j) % 255);
-			myData[j] = checkvalue;
+	for (k = 0; k < multiplFactor; k++){
+		printf("\nZyklus: %i\n", k);
+		writeData(0, 480, 1, BLOCK_COUNT * blocksegment); // Speicher vorbeschreiben			
+		printf("."); // Sortiertes Schreiben	
+		for (i = 0; i <= (BLOCK_COUNT - SPARE_BLOCKS)* blocksegment; i++){
+			for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
+				checkvalue = (uint8_t)((i * j) % 255);
+				myData[j] = checkvalue;
+			}
+			writeBlock(ssd, i, myData);
 		}
-		writeBlock(ssd, i, myData);
-	}
-	printf("Read\n"); // Sortiertes lesen
-	for (i = 0; i <= (BLOCK_COUNT - SPARE_BLOCKS)* BLOCKSEGMENTS ; i++){	
-		readBlock(ssd, i, myRetData);
-		for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
-			checkvalue = (uint8_t)((i * j) % 255);
-			if (myRetData[j] != checkvalue){
-				printf("Mappingfehler\n");
-				// printerr(ssd);
+		printf("*"); // Sortiertes lesen
+		for (i = 0; i <= (BLOCK_COUNT - SPARE_BLOCKS)* blocksegment; i++){
+			readBlock(ssd, i, myRetData);
+			for (j = 0; j < LOGICAL_BLOCK_DATASIZE; j++){
+				checkvalue = (uint8_t)((i * j) % 255);
+				if (myRetData[j] != checkvalue){
+					printf("Mappingfehler\n");
+					printerr(ssd);
+				}
 			}
 		}
 	}
 	printf("Unmount\n");
+	printerr(ssd);
 	ssd = unmount(ssd);
 	printf("Mappingtest erfolgreich\n");
-	printerr(ssd);
-}*/
+	
+}
 
 int main(int argc, char *argv[]) {
 	srand((unsigned int)time(NULL));
@@ -356,17 +360,17 @@ int main(int argc, char *argv[]) {
 	//test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
 
 	//schreibe wiederholt zufällige logische Blöcke
-	//test_write_random_n_locigalBlocks( 480, 50000, LOGICAL_BLOCK_DATASIZE);
+	//test_write_random_n_locigalBlocks(480, 65533, LOGICAL_BLOCK_DATASIZE);
 
 	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
-	mount_test_Light(1000, LOGICAL_BLOCK_DATASIZE);
+	//mount_test_Light(1000, LOGICAL_BLOCK_DATASIZE);
 
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 	//load_test_Random_Light(); 
 
 	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
 
-	//mapping_test(); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(250); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
 	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
 
