@@ -2,7 +2,17 @@
 #include "ftl.h"
 #include <time.h>
 
-void writeData(flash_t* ssd, int start, int amount, int rnd, int tc){
+/*
+Diese Funktion ermöglicht es die SSD zu testen
+
+ssd : Datenstruktur
+start: Anfang des Schreibbereiches (Anfang schreibbereich)
+amount : wie viele Datensegmente geschrieben werden sollen (Ende Schreibbereich)
+rnd : nacheinander schreiben [0] oder Zufällig [1]
+tc : Wie viele Datensätze sollen geschrieben werden
+debug : Punkt ausgabe nach jedem beschriebenen Block
+*/
+void writeData(flash_t* ssd, int start, int amount, int rnd, int tc, int debug){
 	uint8_t myData[16], myRetData[16];
 	int i;
 	int j;
@@ -20,7 +30,7 @@ void writeData(flash_t* ssd, int start, int amount, int rnd, int tc){
 				k = 0;
 			}
 		}
-		printf(".");
+		if (debug != 0) printf(".");
 		for (i = 0; i < 16; i++)
 			myData[i] = (uint8_t)(i + 65);
 
@@ -34,273 +44,90 @@ void writeData(flash_t* ssd, int start, int amount, int rnd, int tc){
 	}
 }
 
-void test_write_random_n_locigalBlocks(flash_t* ssd, flashMem_t flMe, uint16_t blocks, uint16_t range, uint16_t charNumber){
-	uint16_t i, j, l;
-	uint16_t k = 0;
-	uint8_t myData[16], myRetData[16];
+/*
+	Diese Funktion ermöglicht es die SSD zu testen 
 
+	ssd : Datenstruktur
+	flMe: Übergabeparameter für Datenstruktur
+	tc : Anzahl der Geschriebenen Testdaten
+	segmax : Wie viele Segmente sollen genutzt werden? [480]
+	rnd : 0 = kein Zufälliges beschreiben , sonst alle werte Zufall
+*/
+void load_test(flash_t* ssd, flashMem_t *flMe, int tc, int segmax, int rnd){
 	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
+	//FL_resetFlash(); // Start der Simulation
+	ssd = mount(flMe);
 	if (ssd == NULL){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-
-	for (i = 0; i < charNumber; i++)
-		myData[i] = (uint8_t)(i + 65);
-
-	for(i = 0; i < range; i++)		{
-			//zufällige Zeichenfolge
-			for (j = 0; j < charNumber; j++){
-				myData[j] = (uint8_t)(65 + rand() % 20);
-			}
-			//Zufall logischer Block
-			l = (rand() % blocks) ;
-			printf("%i/%i\n",i+1,range);
-			//schreibe
-			writeBlock(ssd, l, myData);
-			//lese
-			readBlock(ssd, l, myRetData);
-			//überprüfe
-			for(k = 0; k < charNumber; k++){
-				if(myData[k] != myRetData[k]){
-					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
-					printerr(ssd);
-					return;
-				}
-			}
-		}
-
+	writeData(ssd, 0, segmax, rnd, tc,1);
+	printf("Daten erfolgreich geschrieben.");
 	printerr(ssd);
 	printf("Unmount\n");
-	ssd = unmount(ssd);	
-	printf("test_write_n_logicalBlocks() beendet");
+	unmount(ssd);
+	printf("load_test Ende");
 }
-
-void test_write_n_locigalBlocks(flash_t* ssd, flashMem_t flMe, uint16_t blocks, uint16_t range, uint16_t charNumber){
-	uint16_t i, l, j;
-	uint16_t k = 0;
-	uint8_t myData[16], myRetData[16];
-
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	
-	for(i = 0; i < range; i++)
-		for(l = 1; l <= blocks; l++){
-			//zufällige Zeichenfolge
-			for (j = 0; j < charNumber; j++){
-				myData[j] = (uint8_t)(65 + rand() % 20);
-			}
-			printf("%i/%i\n",i+1,range);
-			//schreibe
-			writeBlock(ssd, l, myData);
-			//lese
-			readBlock(ssd, l, myRetData);
-			//überprüfe
-			for(k = 0; k < charNumber; k++){
-				if(myData[k] != myRetData[k]){
-					printf("Fehler beim Lesen nach %i Zugriffen\n",i);
-					printerr(ssd);
-					return;
-				}
-			}
-		}
-
-	printerr(ssd);
-	printf("Unmount\n");
-	ssd = unmount(ssd);	
-	printf("test_write_n_logicalBlocks() beendet");
-}
-
-
-void test_write_one_logicalBlock(flash_t* ssd, flashMem_t flMe, uint16_t range, uint16_t charNumber){
-	uint16_t i,j;
-	uint16_t k = 0;
-	uint8_t myData[16], myRetData[16];
-
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-
-	
-	for(i = 0; i < range; i++){
-		//zufällige Zeichenfolge
-		for (j = 0; j < charNumber; j++){
-			myData[j] = (uint8_t)(65 + rand() % 20);
-		}
-		printf("%i/%i\n",i+1,range);
-		//schreibe
-		writeBlock(ssd, 1, myData);
-		//lese
-		readBlock(ssd, 1, myRetData);
-		//überprüfe
-		for(k = 0; k < charNumber; k++){
-			if(myData[k] != myRetData[k]){
-				printf("Fehler beim Lesen nach %i Zugriffen\n",i);
-				printerr(ssd);
-				return;
-			}
-		}
-	}
-
-	printerr(ssd);
-	printf("Unmount\n");
-	ssd = unmount(ssd);	
-	printf("test_write_one_logicalBlock() beendet");
-}
-void load_test_Random_Full(flash_t* ssd, flashMem_t flMe, int tc, int segmax){
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	writeData(ssd, 0, segmax, 1, tc);
-
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	printerr(ssd);
-	printf("load_test_Random_Full Ende");
-}
-
-void overload_test_Random(flash_t* ssd, flashMem_t flMe){
-
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	writeData(ssd, 0, 480, 0, 480);
-
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	printerr(ssd);
-	printf("overload_test_Random Ende");
-}
-
-void mount_test_Light(flash_t* ssd, flashMem_t flMe, uint16_t range, uint8_t charNumber){
-	uint32_t i,k,j;
-	uint8_t myData[16], myRetData[16];
-
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	
-	for(i = 0; i < range; i++){
-		//zufällige Zeichenfolge
-		for (j = 0; j < charNumber; j++){
-			myData[j] = (uint8_t)(65 + rand() % 20);
-		}
-	
-		printf("write data %i/%i\n",i+1,range);
-
-		//schreibe
-		writeBlock(ssd, 1, myData);
-	}
-
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	ssd = NULL;
-	ssd = mount(&flMe);
-	printf("Mount \n");
-
-	//lese
-	readBlock(ssd, 1, myRetData);
-	//überprüfe
-	for(k = 0; k < charNumber; k++){
-		if(myData[k] != myRetData[k]){
-			printf("Fehler beim Lesen\n");
-			printerr(ssd);
-			return;
-		}
-	}
-	for(i = 0; i < range; i++){
-		//zufällige Zeichenfolge
-		for (j = 0; j < charNumber; j++){
-			myData[j] = (uint8_t)(65 + rand() % 20);
-		}
-	
-		printf("write data %i/%i\n",i+1,range);
-
-		//schreibe
-		writeBlock(ssd, 1, myData);
-	}
-	//lese
-	readBlock(ssd, 1, myRetData);
-	//überprüfe
-	for(k = 0; k < charNumber; k++){
-		if(myData[k] != myRetData[k]){
-			printf("Fehler beim Lesen\n");
-			printerr(ssd);
-			return;
-		}
-	}
-
-	
-	printerr(ssd);
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	printf("mount_test_Light Ende");
-}
-
-void load_test_Random_Light(flash_t* ssd, flashMem_t flMe, int tc){
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe); 
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	writeData(ssd, 0, 120, 1, tc);
-
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	printf("load_test_Random_Light Ende");
-	printerr(ssd);
-}
-
-void load_test_OS(flash_t* ssd, flashMem_t flMe){
-	int i;
-
-	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
-	if (ssd == NULL){
-		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
-		return;
-	}
-	writeData(ssd, 0, 119, 0, 120); // Installation OS
-	for (i = 0; i < 20; i++){
-		writeData(ssd, 119, 239, 1, 200); // File Usage
-		writeData(ssd, 358, 70, 1, 1000); // Temp Data Usage
-		writeData(ssd, 428, 30, 1, 10000); // Extrem Data Usage
-	}
-	printf("Unmount\n");
-	ssd = unmount(ssd);
-	printerr(ssd);
-	printf("load_test_OS Ende");
-}
-
 
 /*
-	Der Mapping Test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind
+Der mountmapping_test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind.
+Von Chris Deter
+
+ssd : Datenstruktur
+flMe: Übergabeparameter für Datenstruktur
+multiplikator : Wie oft der Schreibzugang durchgeführt wird (1 - 750+)
+logicalsize : Wie groß die logische Größe ist (16)
+spare: Angabe der Spareblockanzahl (~2)
+blockcount: Wie viele Blöcke es insgesammt gibt (32)
+blocksegment : Anzahl der beschreibbaren Einheiten eines Blockes (16)
+*/
+void mountmapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32_t logicalsize, int spare, int blockcount, uint32_t blocksegment){
+	uint32_t i, j, k;
+	uint8_t checkvalue;
+	uint8_t myData[16], myRetData[16];
+	printf("Mount \n");
+	//FL_resetFlash(); // Start der Simulation
+	ssd = mount(flMe);
+	if (ssd == NULL){
+		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
+		return;
+	}
+	writeData(ssd, 0, blocksegment, 0, blocksegment, 0); // Speicher vorbeschreiben
+	//printerr(ssd);
+	for (k = 0; k < multiplikator; k++){
+		printf("\nZyklus: %i\n", k);
+		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment, 0); // Speicher vorbeschreiben	
+		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
+			for (j = 0; j < logicalsize; j++){
+				checkvalue = (uint8_t)(((i * j) + k) % 255);
+				myData[j] = checkvalue;
+				//printf("%c", checkvalue);
+			}
+			writeBlock(ssd, i, myData);
+			//printf(".");
+		}
+		ssd = unmount(ssd); // Zwischen lese und schreibe zugriffen einmal unmounten und neu mounten
+		ssd = mount(flMe);
+		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
+			readBlock(ssd, i, myRetData);
+			for (j = 0; j < logicalsize; j++){
+				checkvalue = (uint8_t)(((i * j) + k) % 255);
+				if (myRetData[j] != checkvalue){
+					printf("Mappingfehler\n");
+					printerr(ssd);
+				}
+			}
+		}
+	}
+	printf("Unmount\n");
+	printerr(ssd); // Debug Ausgabe der Datenstruktur!
+	ssd = unmount(ssd);
+	printf("Mount Mappingtest erfolgreich\n");
+}
+
+/*
+	Der Mapping Test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind.
+	Von Chris Deter
 
 	ssd : Datenstruktur
 	flMe: Übergabeparameter für Datenstruktur
@@ -310,21 +137,22 @@ void load_test_OS(flash_t* ssd, flashMem_t flMe){
 	blockcount: Wie viele Blöcke es insgesammt gibt (32)
 	blocksegment : Anzahl der beschreibbaren Einheiten eines Blockes (16)
 */
-void mapping_test(flash_t* ssd, flashMem_t flMe, int multiplikator, int logicalsize, int spare, int blockcount, int blocksegment){
+void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32_t logicalsize, int spare, int blockcount, uint32_t blocksegment){
 	uint32_t i, j, k;
 	uint8_t checkvalue;
 	uint8_t myData[16], myRetData[16];
 	printf("Mount \n");
-	FL_resetFlash(); // Start der Simulation
-	ssd = mount(&flMe);
+	//FL_resetFlash(); // Start der Simulation
+	ssd = mount(flMe);
 	if (ssd == NULL){
 		printf("FEHLER (ist Flashspeicher initialisiert?) \n");
 		return;
 	}
-	writeData(ssd, 0, blocksegment, 1, blockcount * blocksegment); // Speicher vorbeschreiben	
-
+	writeData(ssd, 0, blocksegment, 0,  blocksegment,0); // Speicher vorbeschreiben
+	//printerr(ssd);
 	for (k = 0; k < multiplikator; k++){
 		printf("\nZyklus: %i\n", k);
+		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,0); // Speicher vorbeschreiben	
 		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j)  +k) % 255);
@@ -349,41 +177,28 @@ void mapping_test(flash_t* ssd, flashMem_t flMe, int multiplikator, int logicals
 	printerr(ssd); // Debug Ausgabe der Datenstruktur!
 	ssd = unmount(ssd);
 	printf("Mappingtest erfolgreich\n");
-	
 }
 
 int main(int argc, char *argv[]) {
 	int blocksegment = 16;
 	flash_t* ssd = NULL;
-	flashMem_t flMe;
+	flashMem_t *flMe = NULL;
 
 	srand((unsigned int)time(NULL));
-
-	//schreibe wiederholt einen logischen Block
-	//test_write_one_logicalBlock(20000, LOGICAL_BLOCK_DATASIZE); 
-
-	//schreibe wiederholt verschiedene logische Blöcke	
-	// 1 bis maximal 480 => 2 Blöcke Spare; d.h. 512(32*16) - 32 
-	//test_write_n_locigalBlocks( 480, 100,LOGICAL_BLOCK_DATASIZE );		
-
-	//schreibe wiederholt zufällige logische Blöcke
-	//test_write_random_n_locigalBlocks(480, 65533, LOGICAL_BLOCK_DATASIZE);
-
+	FL_resetFlash();
 	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
-	//mount_test_Light(1000, LOGICAL_BLOCK_DATASIZE);
+	//mountmapping_test(ssd, flMe, 4, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 
+	FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
-	//load_test_Random_Light(); 
-
-	//load_test_Random_Full(); // Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Extremwerttest)
-
-	//mapping_test(750, 16, 2, 32);
-	//void mapping_test(flash_t* ssd, flashMem_t flMe, int multiplFactor, int blocksegement, int spare, int blockcount){
-	mapping_test(ssd, flMe, 3, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
-
-	//load_test_OS(); // Sorgt für hohe schreibrate und lässt teilweise komplette Blöcke unberührt (Testbeispiel für [TC11] ), Läuft eine Weile
-
-	//overload_test_Random(); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
-
-
+	load_test(ssd, flMe, 2000, 200, 1);
+	// Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Grenzwerttest)
+	load_test(ssd, flMe, 5000, 480, 1);
+	
+	FL_resetFlash();
+	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
+	mapping_test(ssd, flMe, 50, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	
+	// Overload Test
+	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 }
