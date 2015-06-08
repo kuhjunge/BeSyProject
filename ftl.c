@@ -869,6 +869,7 @@ flash_t *unmount(flash_t *flashDevice){
 	freeList(flashDevice->hotPool);
 	freeList(flashDevice->coldPool);
 	free(flashDevice->mappingTable);
+	free(flashDevice->mappingTableRev);
 	free(flashDevice->blockArray);
 	free(flashDevice);
 	return flashDevice;
@@ -977,7 +978,7 @@ void printerr(flash_t *flashDevice){
 					if (segmentStatus(flashDevice, i, j) == assigned && getMapT(flashDevice, i, j) == 0){ error = '!'; }
 					//if (mapping(flashDevice, getMapT(flashDevice, i, j)) == getMappingTableSize() && getMapT(flashDevice, i, j) == 0){ error = '!'; }
 					//if (mapping(flashDevice, getMapT(flashDevice, i, j)) != getMappingTableSize() && getMapT(flashDevice, i, j) != 0){ error = '!'; }
-					del = mapping(flashDevice, getMapT(flashDevice, i, j));
+					//del = mapping(flashDevice, getMapT(flashDevice, i, j));
 					if (segmentStatus(flashDevice, i, j) > 2){ error = '?'; }
 					printf("Segment %02i: Table: %03i ( %04i ) - %i %c %c\n", 
 						j, getMapT(flashDevice, i, j), mapping(flashDevice,getMapT(flashDevice, i, j)), segmentStatus(flashDevice, i, j), error, marker);
