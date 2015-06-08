@@ -87,6 +87,7 @@ typedef struct {
 typedef struct flash_struct
 {	
 	uint32_t *mappingTable; // Übersetzungstabelle
+	uint32_t * mappingTableRev;
 	Block_t *blockArray; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;	
 	uint32_t freeBlocks;

@@ -434,22 +434,30 @@ uint32_t getMapT(flash_t *flashDevice, int block, int seg){
 }
 
 void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
+	// Sonderfall Index auf Null setzten (invalidieren)
+	if (v == getMappingTableSize()){
+		flashDevice->mappingTableRev[getMapT(flashDevice, block, seg)] = getMappingTableSize();
+	}
+	else {
+		// Index updaten
+		flashDevice->mappingTableRev[v] = (block  *getBlockSegmentCount()) + seg;
+	}
 	flashDevice->mappingTable[(block  *getBlockSegmentCount()) + seg] = v;
 }
 
 // Gibt 512 Speicherplatz representation zurück [Blocksegment]
 uint32_t mapping(flash_t *flashDevice, uint32_t index){
-	uint32_t target;
+	/*uint32_t target;
 	uint32_t i = 0;
 	uint32_t x = getMappingTableSize();
+
 	for (i = 0; i < x; i++){
 		target = getMapT(flashDevice, i / getBlockSegmentCount(), i % getBlockSegmentCount());
 		if (target == index){ return i; }
 	}
-	return x;
-	/* 
-	ToDo: Algorihtmus nicht so effizient wie HashMap, ändern!
-	*/
+	return x;*/
+	if (index == 0) return getMappingTableSize();
+	return flashDevice->mappingTableRev[index];
 }
 
 StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint16_t segment){
@@ -650,7 +658,7 @@ flash_t  *mount(flashMem_t *flashHardware){
 	uint32_t i, temp, k, p;
 	ListElem_t *element = NULL;
 	uint8_t *state;
-	uint32_t pos = 0;
+	// uint32_t pos = 0;
 	uint8_t data[4];
 	uint32_t blockCount = 0;
 	uint32_t mappingTableCount = 0;
@@ -668,10 +676,16 @@ flash_t  *mount(flashMem_t *flashHardware){
 		size = cast8To32(state[i++], state[i++], state[i++], state[i++]);
 		mappingTableCount = cast8To32(state[i++], state[i++], state[i++], state[i++]);
 		flashDevice->mappingTable = (uint32_t*)malloc(mappingTableCount*sizeof(uint32_t));
+		flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize() + 1)*sizeof(uint32_t));
 		for (k = 0; k < mappingTableCount; k++){
 			temp = cast8To32(state[i++], state[i++], state[i++], state[i++]);
 			flashDevice->mappingTable[k] = temp;
 		}
+
+		for (k = 0; k < getMappingTableSize(); k++){
+			flashDevice->mappingTableRev[k] = getMapT(flashDevice, k / FL_getBlockCount(), k % FL_getBlockCount());
+		}
+		
 		blockCount = cast8To32(state[i++], state[i++], state[i++], state[i++]);
 		flashDevice->blockArray = (Block_t*)malloc(blockCount*sizeof(Block_t));
 		for (k = 0; k < blockCount; k++){
@@ -710,6 +724,7 @@ flash_t  *mount(flashMem_t *flashHardware){
 	}
 	else{
 		flashDevice->mappingTable = (uint32_t*)malloc(getMappingTableSize()*sizeof(uint32_t));
+		flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize() + 1)*sizeof(uint32_t));
 		flashDevice->blockArray = (Block_t*)malloc(FL_getBlockCount()*sizeof(Block_t));
 
 		for (i = 0; i < FL_getBlockCount(); i++){
@@ -721,6 +736,10 @@ flash_t  *mount(flashMem_t *flashHardware){
 		// setze Adressen auf 0
 		for (i = 0; i < getMappingTableSize(); i++){
 			flashDevice->mappingTable[i] = 0;
+		}
+		
+		for (i = 0; i < getMappingTableSize(); i++){
+			flashDevice->mappingTableRev[i] = getMappingTableSize();
 		}
 		// setze als ersten zu beschreibenden Block den Block 0, da alle noch gleich sind
 		flashDevice->actWriteBlock = 0;
@@ -908,9 +927,8 @@ void printerr(flash_t *flashDevice){
 		if ((FL_getBlockCount() - flashDevice->freeBlocks) > 0){
 			calcLevel = flashDevice->invalidCounter / (FL_getBlockCount() - flashDevice->freeBlocks);
 		}
-		printf("Freie Blocks: %i\nInvalide Segmente: %i (Schwellwert %i)\nAktuelle Schreibposition B:%i / S:%i\nUnmount Fehler: %c \n\n"
-
-			, flashDevice->freeBlocks, flashDevice->invalidCounter, calcLevel, block, segment, unMountErr);
+		printf("Freie Blocks: %i\nInvalide Segmente: %i (Schwellwert %i)\nAktuelle Schreibposition B:%i / S:%i\nUnmount Fehler: %c \nMapping Table Size: %i \n\n"
+			, flashDevice->freeBlocks, flashDevice->invalidCounter, calcLevel, block, segment, unMountErr, getMappingTableSize());
 		printf("Block | Status | Invalide Segmente | Loeschanzahl\n");
 		for (i = 0; i < FL_getBlockCount(); i++)
 		{
@@ -957,8 +975,12 @@ void printerr(flash_t *flashDevice){
 					if (block == i && segment == j){ marker = 'S'; }
 					if (segmentStatus(flashDevice, i, j) != assigned && getMapT(flashDevice, i, j) != 0){ error = '!'; }
 					if (segmentStatus(flashDevice, i, j) == assigned && getMapT(flashDevice, i, j) == 0){ error = '!'; }
+					//if (mapping(flashDevice, getMapT(flashDevice, i, j)) == getMappingTableSize() && getMapT(flashDevice, i, j) == 0){ error = '!'; }
+					//if (mapping(flashDevice, getMapT(flashDevice, i, j)) != getMappingTableSize() && getMapT(flashDevice, i, j) != 0){ error = '!'; }
+					del = mapping(flashDevice, getMapT(flashDevice, i, j));
 					if (segmentStatus(flashDevice, i, j) > 2){ error = '?'; }
-					printf("Segment %02i: Table: %03i - %i %c %c\n", j, getMapT(flashDevice, i, j), segmentStatus(flashDevice, i, j), error, marker);
+					printf("Segment %02i: Table: %03i ( %04i ) - %i %c %c\n", 
+						j, getMapT(flashDevice, i, j), mapping(flashDevice,getMapT(flashDevice, i, j)), segmentStatus(flashDevice, i, j), error, marker);
 				}
 				printf("Segment: empty (0) / assigned (1) / invalid (2)\n");				
 				getchar();
