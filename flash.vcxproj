@@ -77,11 +77,15 @@
     <ClCompile Include="flashhardware.c" />
     <ClCompile Include="ftl.c" />
     <ClCompile Include="hw_demo.c" />
+    <ClCompile Include="list.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="test_List.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="flashhardware.h" />
     <ClInclude Include="ftl.h" />
+    <ClInclude Include="ftl_structs.h" />
+    <ClInclude Include="list.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
