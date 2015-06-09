@@ -12,6 +12,8 @@
 #define THETA 10				
 // Definiert den Bereich für BlockNeutralisationen
 #define DELTA 5	
+// definiert die Größe des save_state
+#define SAVE_STATE_SIZE 2584
 
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
