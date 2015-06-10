@@ -677,40 +677,40 @@ flash_t  *mount(flashMem_t *flashHardware){
 	uint32_t blockCount = 0;
 	uint32_t mappingTableCount = 0;
 	uint32_t size = 0;
-	uint32_t charCounter = 0;
+	uint32_t charCounter = 0;	
 
 	// Laden von flash_t	
-	state = (uint8_t*)malloc(SAVE_STATE_SIZE* sizeof(uint8_t));
+	state = (uint8_t*)malloc(SAVE_STATE_SIZE * sizeof(uint8_t));
 	flashDevice = (flash_t*)malloc(sizeof(flash_t));
+	flashDevice->mappingTable = (uint32_t*)malloc(getMappingTableSize()*sizeof(uint32_t));
+	flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize())*sizeof(uint32_t));
+	flashDevice->blockArray = (Block_t*)malloc(FL_getBlockCount()*sizeof(Block_t));
 
 	if (FL_restoreState(state) == state){
-
-		//laden
-		i = 0;
+				
+		//laden		
+		i = 0;		
 		size = convert8To32(state[i++], state[i++], state[i++], state[i++]);		
-		mappingTableCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);
-		flashDevice->mappingTable = (uint32_t*)malloc(mappingTableCount*sizeof(uint32_t));
-		flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize() + 1)*sizeof(uint32_t));
+		mappingTableCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
 		for (k = 0; k < mappingTableCount; k++){
 			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
-			flashDevice->mappingTable[k] = temp;
+			flashDevice->mappingTable[k] = temp;			
 		}
 
-		for (k = 0; k < getMappingTableSize(); k++){
+		for (k = 0; k < mappingTableCount; k++){
 			flashDevice->mappingTableRev[k] = getMapT(flashDevice, k / FL_getBlockCount(), k % FL_getBlockCount());
 		}
 		
-		blockCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);
-		flashDevice->blockArray = (Block_t*)malloc(blockCount*sizeof(Block_t));
+		blockCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);		
 		for (k = 0; k < blockCount; k++){
-			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
+			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
 			flashDevice->blockArray[k].invalidCounter = temp;
-			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
+			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
 			flashDevice->blockArray[k].deleteCounter = temp;
-			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
+			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
 			flashDevice->blockArray[k].writePos = temp;
-			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
-			flashDevice->blockArray[k].status = (BlockStatus_t)temp;
+			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
+			flashDevice->blockArray[k].status = (BlockStatus_t)temp;			
 		}
 		temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
 		flashDevice->invalidCounter = temp;
@@ -736,10 +736,7 @@ flash_t  *mount(flashMem_t *flashHardware){
 		grouping(flashDevice);
 
 	}
-	else{
-		flashDevice->mappingTable = (uint32_t*)malloc(getMappingTableSize()*sizeof(uint32_t));
-		flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize() + 1)*sizeof(uint32_t));
-		flashDevice->blockArray = (Block_t*)malloc(FL_getBlockCount()*sizeof(Block_t));
+	else{				
 
 		for (i = 0; i < FL_getBlockCount(); i++){
 			flashDevice->blockArray[i].invalidCounter = 0;
@@ -804,7 +801,7 @@ flash_t *unmount(flash_t *flashDevice){
 	if (flashDevice == NULL) return NULL;
 
 	state = (uint8_t*)malloc(SAVE_STATE_SIZE* sizeof(uint8_t));
-
+	
 	//Gesamtgröße
 	convert32To8(data, 0);
 	for (i = 0; i < 4; i++){
@@ -816,7 +813,7 @@ flash_t *unmount(flash_t *flashDevice){
 		state[pos++] = data[i];
 	}
 	for (k = 0; k < getMappingTableSize(); k++){
-		convert32To8(data, flashDevice->mappingTable[k]);
+		convert32To8(data, flashDevice->mappingTable[k]);		
 		for (i = 0; i < 4; i++){
 			state[pos++] = data[i];
 		}
@@ -827,7 +824,7 @@ flash_t *unmount(flash_t *flashDevice){
 		state[pos++] = data[i];
 	}
 	//Blöcke	
-	for (k = 0; k < FL_getBlockCount(); k++){
+	for (k = 0; k < FL_getBlockCount(); k++){		
 		convert32To8(data, flashDevice->blockArray[k].invalidCounter);
 		for (i = 0; i < 4; i++){
 			state[pos++] = data[i];
@@ -878,14 +875,15 @@ flash_t *unmount(flash_t *flashDevice){
 	}
 
 	//gebe allen allozierten Speicher wieder frei
-	free(state);
+	free(state);	
 	freeList(flashDevice->neutralPool);
 	freeList(flashDevice->hotPool);
 	freeList(flashDevice->coldPool);
-	free(flashDevice->mappingTable);
-	free(flashDevice->mappingTableRev);
 	free(flashDevice->blockArray);
-	free(flashDevice);
+	free(flashDevice->mappingTable);
+	free(flashDevice->mappingTableRev);		
+	flashDevice = NULL;
+	free(flashDevice);		
 	return flashDevice;
 }
 

@@ -13,7 +13,7 @@
 // Definiert den Bereich für BlockNeutralisationen
 #define DELTA 5	
 // definiert die Größe des save_state
-#define SAVE_STATE_SIZE 2584
+#define SAVE_STATE_SIZE 3000
 
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
@@ -89,7 +89,7 @@ typedef struct {
 typedef struct flash_struct
 {	
 	uint32_t *mappingTable; // Übersetzungstabelle
-	uint32_t * mappingTableRev;
+	uint32_t *mappingTableRev;
 	Block_t *blockArray; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;	
 	uint32_t freeBlocks;
