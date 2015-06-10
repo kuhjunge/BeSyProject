@@ -191,9 +191,9 @@ int main(int argc, char *argv[]) {
 
 	FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
-	load_test(ssd, flMe, 2000, 200, 1);
+//	 load_test(ssd, flMe, 2000, 200, 1);
 	// Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Grenzwerttest)
-	load_test(ssd, flMe, 5000, 480, 1);
+//	load_test(ssd, flMe, 5000, 480, 1);
 	
 	FL_resetFlash();
 	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);

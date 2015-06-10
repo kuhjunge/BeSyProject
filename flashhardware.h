@@ -6,16 +6,29 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+// globale Defines, die die Simulation der Eigenschaften steuern
+#define FL_WEAR_OUT_LIMIT 5000		// Anzahl möglicher Löschzyklen
+#define FL_RANDOM_FAIL_PROBABILITY	10 // Wahrscheinlichkeit (in %), dass ein Block ausfällt, wenn DeleteCount den Schwellwert FL_WEAR_OUT_LIMIT erreicht
+
+// Auswahl der Simulationsmethode für Wear-Out: 
+// 0: Feste Grenze, wenn DeleteCount den Schwellwert FL_WEAR_OUT_LIMIT erreicht ist der Block defekt. 
+// 1: Bei Überschreiten von FL_WEAR_OUT_LIMIT besteht bei jedem Löschen eine durch FL_RANDOM_FAIL_PROBABILITY gegebene Wahrscheinlichkeit, dass der Block beim Löschen ausfällt.  
+#define FL_USE_RANDOM	0			
+
 
 // globale Defines, die die physikalische Struktur des Flash parametrieren
-#define PARTITION_COUNT	1	// Anzahl der Partitionen, nur eine Unterstützt
-#define BLOCK_COUNT 32		// Anzahl der Blöcke 
-#define PAGES_PER_BLOCK 4	// Anzahl der Pages in einem Block 
+#define PARTITION_COUNT	1		// Anzahl der Partitionen, nur eine Unterstützt
+#define BLOCK_COUNT 32			// Anzahl der Blöcke 
+#define PAGES_PER_BLOCK 4		// Anzahl der Pages in einem Block 
 #define PAGE_DATASIZE 64		// Größe des Datenbereichs einer Page in Byte
-#define PAGE_SPARESIZE 64	// Größe des Reserevebereichs einer Page in Byte 
+#define PAGE_SPARESIZE 64		// Größe des Reserevebereichs einer Page in Byte 
+
 
 #define FLASH_INITIALISED 0xA2		// indicates an initialised flash memory hardware
 #define STATEBLOCKSIZE 512			// Größe der Datenblöcke in denen der Zustand bei unmount gespeichert wird
+
 
 typedef struct flashPage_struct 
 	{
@@ -42,6 +55,8 @@ typedef struct flashMem_struct
 		uint16_t pageSpareSize; 
 		uint8_t	*stateStorage; 
 		uint8_t stateStorageSize;		// in multiples of STATEBLOCKSIZE
+		uint32_t wearOutLimit;
+		uint8_t randomFailProbability; 
 	} flashMem_t; 
 
 

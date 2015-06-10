@@ -29,8 +29,26 @@ uint8_t FL_resetFlash() {
 }
 
 uint8_t FL_deleteBlock (uint16_t nr) {
-	uint32_t i,j; 
+	uint32_t i,j,r; 
 	if (!FL_isInitialised(&flashMem)) return FALSE;
+	if (flashMem.block[nr].dead) return FALSE;	// tote Blöcke nicht löschen
+	// Ende der Lebensdauer überprüfen
+	if (flashMem.block[nr].deleteCount>flashMem.wearOutLimit) {
+		// Zelle ggf. als defekt markieren, und löschen fehlschlagen lassen 
+		if (FL_USE_RANDOM) { // Zufallsganerator für Ausfall bemühen
+			r=(rand()%100); 
+			if (r<flashMem.randomFailProbability) {
+				flashMem.block[nr].dead = TRUE;	// Der Block ist tot
+				return FALSE;					// Das Löschen schlägt fehl
+			}
+		}
+		else {	// hartes Limit 
+			flashMem.block[nr].dead = TRUE;		// Der Block ist tot
+			return FALSE;						// Das Löschen schlägt fehl
+		}
+	}
+	// falls bis hier nicht als defekt markiert: Block normal löschen
+
 	for (i=0; i<FL_getPagesPerBlock(); i++) {
 		// for each page in the block delete both data areas
 		for (j=0; j<FL_getPageDataSize(); j++) 
@@ -178,6 +196,7 @@ uint8_t FL_isInitialised(flashMem_t *flashHardware) {
 
 uint8_t FL_initFlash(flashMem_t *flashHardware) {
 // initialises the flash datastructure without deleting it 
+	time_t t;
 	flashHardware->partitionCount = PARTITION_COUNT;
 	flashHardware->blockCount = BLOCK_COUNT;
 	flashHardware->pagesPerBlock = PAGES_PER_BLOCK;
@@ -188,6 +207,14 @@ uint8_t FL_initFlash(flashMem_t *flashHardware) {
 	flashHardware->initialised=FLASH_INITIALISED;
 	flashHardware->stateStorage=NULL; 
 	flashHardware->stateStorageSize=0; 
+	// initialisation of the simulation
+	flashHardware->wearOutLimit=FL_WEAR_OUT_LIMIT; 
+	flashHardware->randomFailProbability=FL_RANDOM_FAIL_PROBABILITY; 
+	if (FL_USE_RANDOM) {
+	    time(&t);
+	    srand((unsigned int)t);   
+	}
+
 	return TRUE; 
 }
 

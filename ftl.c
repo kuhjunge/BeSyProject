@@ -534,8 +534,9 @@ void cleanBlock(flash_t *flashDevice, uint32_t block){
 		flashDevice->blockArray[block].status = ready; // Status auf Ready setzen
 		flashDevice->freeBlocks++;
 	}
-	else {		
+	else {
 		flashDevice->blockArray[block].status = badBlock; // Status auf BadBlock setzen
+		printerr(flashDevice);
 	}
 
 }
@@ -640,6 +641,7 @@ uint32_t nextBlock(flash_t *flashDevice){
 	
 	// Fehlerfall, kein beschreibbarer Block gefunden
 	garbageCollector(flashDevice);
+	printf("NextBlock Rekursionsfehler!");
 	return nextBlock(flashDevice);	
 }
 
