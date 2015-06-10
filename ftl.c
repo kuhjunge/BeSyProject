@@ -176,8 +176,8 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 	uint32_t blockNr = getMappingTableSize();
 	//allokiere Speicher
 	data = (uint8_t**)malloc(getBlockSegmentCount()*sizeof(uint8_t*) );
-	for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
-		data[i] = (uint8_t*)malloc(sizeof(uint8_t));
+	for(i = 0; i < getBlockSegmentCount(); i++){
+		data[i] = (uint8_t*)malloc(LOGICAL_BLOCK_DATASIZE*sizeof(uint8_t));
 	}
 	mappingData = (uint32_t*) malloc(getBlockSegmentCount()*sizeof(uint32_t));
 
@@ -264,10 +264,6 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 					}
 				} while (p == FALSE);
 			}
-			// Berechen AVGs neu nach Neutralisation
-			//TODO nachfragen
-			//pool->AVG += (double) (EC(flashDevice->neutralPool, tempBlock) - EC(pool, deletedBlock)) / pool->blockCounter;
-			//flashDevice->AVG += (double) (EC(pool, deletedBlock) - EC(flashDevice->neutralPool, tempBlock)) / FL_getBlockCount();
 			
 			//Update des Blocks in Pool
 			if (delBlock(pool, deletedBlock) == TRUE){
@@ -276,9 +272,9 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 
 			//free für allozierte Variablen
 		    free(mappingData);
-			/*for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
+			for(i = 0; i < getBlockSegmentCount(); i++){
 				free(data[i]);
-			}// */ //TODO nachfragen wie zu free-en ist
+			}
 			free(data);
 			//printf("Neutralisation beendet\n");
 }
@@ -302,8 +298,8 @@ void deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool){
 	uint32_t data_position = 0;
 	//allokiere Speicher
 	data = (uint8_t**)malloc(getBlockSegmentCount()*sizeof(uint8_t*) );
-	for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
-		data[i] = (uint8_t*)malloc(sizeof(uint8_t));
+	for(i = 0; i < getBlockSegmentCount(); i++){
+		data[i] = (uint8_t*)malloc(LOGICAL_BLOCK_DATASIZE*sizeof(uint8_t));
 	}
 	mappingData = (uint32_t*) malloc(getBlockSegmentCount()*sizeof(uint32_t));
 
@@ -343,9 +339,9 @@ void deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool){
 
 			//free für allozierte Variablen
 		    free(mappingData);
-			/*for(i = getBlockSegmentCount() - 1; i >= 0; i--){					
+			for(i = 0 ; i < getBlockSegmentCount(); i++){					
 					free(data[i]);			
-			}*/
+			}
 			free(data);
 }
 
