@@ -365,6 +365,22 @@ void grouping(flash_t *flashDevice){
 		addBlock(flashDevice->coldPool, blockNr);
 		element = showFirstElement(flashDevice->neutralPool);
 	}
+	//Überprüfe coldPool
+	element = showLastElement(flashDevice->coldPool);
+	while(element != NULL && EC(flashDevice->coldPool, element->blockNr) > flashDevice->AVG - THETA) {
+		blockNr = element->blockNr;
+		delBlock(flashDevice->coldPool, blockNr);
+		addBlock(flashDevice->neutralPool, blockNr);
+		element = showLastElement(flashDevice->coldPool);
+	}
+	//überprüfe hotPool
+	element = showFirstElement(flashDevice->hotPool);
+	while(element != NULL && EC(flashDevice->hotPool, element->blockNr) < flashDevice->AVG + THETA) {
+		blockNr = element->blockNr;
+		delBlock(flashDevice->hotPool, blockNr);
+		addBlock(flashDevice->neutralPool, blockNr);
+		element = showFirstElement(flashDevice->hotPool);
+	}
 }
 
 void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){		
