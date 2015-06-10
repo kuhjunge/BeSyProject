@@ -168,7 +168,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 				checkvalue = (uint8_t)(((i * j) + k) % 255);
 				if (myRetData[j] != checkvalue){
 					printf("Mappingfehler\n");
-					printerr(ssd);
+					//printerr(ssd);
 				}
 			}
 		}
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
 	
 	FL_resetFlash();
 	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
-	mapping_test(ssd, flMe, 500, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(ssd, flMe, 200, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	// Overload Test
 	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?

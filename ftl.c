@@ -548,7 +548,9 @@ void cleanBlock(flash_t *flashDevice, uint32_t block){
 	}
 	else {
 		flashDevice->blockArray[block].status = badBlock; // Status auf BadBlock setzen
-		printerr(flashDevice);
+		printf("Fehler! BadBlock (%i) \n", block);
+		//printerr(flashDevice);
+		garbageCollector(flashDevice); // nochmal cleanen
 	}
 
 }
@@ -652,9 +654,13 @@ uint32_t nextBlock(flash_t *flashDevice){
 	}
 	
 	// Fehlerfall, kein beschreibbarer Block gefunden
-	garbageCollector(flashDevice);
-	printf("NextBlock Rekursionsfehler!");
-	return nextBlock(flashDevice);	
+	if (flashDevice->invalidCounter < getBlockSegmentCount()){
+		garbageCollector(flashDevice);
+		printf("NextBlock Rekursionsfehler!");
+		printerr(flashDevice);
+		return nextBlock(flashDevice);
+	}
+	return 0; // Fehlerhaften Block zurück geben
 }
 
 // Funktionsimplementation FLT
