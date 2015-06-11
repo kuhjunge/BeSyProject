@@ -165,36 +165,31 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t blo
 }
 
 void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, uint8_t hotNeutralisation){
-	uint16_t p, i, k;
-	uint8_t **data;
-	uint8_t data2[LOGICAL_BLOCK_DATASIZE];
-	uint32_t *mappingData;
-	uint16_t data_position = 0;
-	uint8_t tempSegment[LOGICAL_BLOCK_DATASIZE];	
+	uint32_t p, i, k;
+	uint8_t data[LOGICAL_BLOCK_DATASIZE];	
 	uint32_t tempAddress = 0;
-	uint32_t tempBlock = 0;
+	uint32_t spareBlock = 0;
 	uint32_t blockNr = getMappingTableSize();
-	//allokiere Speicher
-	data = (uint8_t**)malloc(getBlockSegmentCount()*sizeof(uint8_t*) );
-	for(i = 0; i < getBlockSegmentCount(); i++){
-		data[i] = (uint8_t*)malloc(LOGICAL_BLOCK_DATASIZE*sizeof(uint8_t));
-	}
-	mappingData = (uint32_t*) malloc(getBlockSegmentCount()*sizeof(uint32_t));
+	uint32_t writePos, data_position = 0, oldBlock;	
+	
+	//wähle spareBlock aus
+	spareBlock = nextBlock(flashDevice);
 
-		//step 1 kopiere valide Segmente in tempBlock			
+		//step 1 kopiere valide Segmente in spareBlock			
 			for (p = 0; p < getBlockSegmentCount(); p++){				
 					if (segmentStatus(flashDevice, deletedBlock, p) == assigned){
-						mappingData[data_position] = getMapT(flashDevice, deletedBlock, p);
-						readBlockIntern(flashDevice, deletedBlock, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data2);
+						tempAddress = getMapT(flashDevice, deletedBlock, p);
+						readBlockIntern(flashDevice, deletedBlock, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data);
 						invalidationOfOldIndex(flashDevice, deletedBlock, p);
-						for(i = 0; i < LOGICAL_BLOCK_DATASIZE; i++){
-							data[data_position][i] = data2[i];
-						}
+						writePos = flashDevice->blockArray[spareBlock].writePos;
+						writeSegmentToBlock(flashDevice, data, spareBlock);
+						setMapT(flashDevice, spareBlock, writePos, tempAddress);						
 						data_position++;
 					}
 			}
 			//step 2 lösche Block und setze Zähler hoch
 			cleanBlock(flashDevice, deletedBlock);			
+
 			//step 3 kopiere alle validen Segmente aus Min(neutralPool)/Max(neutralPool) in deletedBlock			
 			// und step 5 update der Adressen
 			//TODO Fehlerfall, es sind keine Elemente mehr im neutralPool [Übergangslösung überarbeiten!!]
@@ -220,18 +215,22 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 				blockNr = showLastElement(flashDevice->neutralPool)->blockNr;
 			}
 			for (p = 0; p < getBlockSegmentCount(); p++){				
-					if (segmentStatus(flashDevice, deletedBlock, p) == assigned){						
+					if (segmentStatus(flashDevice, blockNr, p) == assigned){						
 						tempAddress = getMapT(flashDevice, blockNr, p);
-						readBlockIntern(flashDevice, blockNr, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data2);
+						readBlockIntern(flashDevice, blockNr, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data);
 						invalidationOfOldIndex(flashDevice, blockNr, p);
-						writeSegmentToBlock(flashDevice, data2, deletedBlock);						
+						writePos = flashDevice->blockArray[deletedBlock].writePos;
+						writeSegmentToBlock(flashDevice, data, deletedBlock);						
 						//Adressupdate																				
-						setMapT(flashDevice, deletedBlock, p, tempAddress);
+						setMapT(flashDevice, deletedBlock, writePos, tempAddress);
 					}
-			}		
+			}					
 
-			//step 4 kopiere aus tempBlock(data) in MAX(neutralPool)/Min(neutralPool)
-			//falls dieser nicht genügend Kapazität hat, lösche den anderen und kopiere da den Rest rein
+			//speichere den eben verwendeten Block zwischen
+			oldBlock = blockNr;
+
+			//step 4 kopiere aus spareBlock(data) in MAX(neutralPool)/Min(neutralPool)
+			//falls dieser nicht genügend Kapazität hat, hole neuen leeren Block mit nextBlock()
 			// und step 5 update der Adressen
 			if(hotNeutralisation == TRUE){
 				blockNr = showLastElement(flashDevice->neutralPool)->blockNr;
@@ -241,41 +240,47 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 			}			
 			for (i = 0; i < data_position; i++){
 				do {
-					k = flashDevice->blockArray[blockNr].writePos;
-					p = writeSegmentToBlock(flashDevice, data[i], blockNr);
+					tempAddress = getMapT(flashDevice, spareBlock, i);
+					readBlockIntern(flashDevice, spareBlock, i / FL_getPagesPerBlock(), (i % FL_getPagesPerBlock()), data);					
+					writePos = flashDevice->blockArray[blockNr].writePos;
+					p = writeSegmentToBlock(flashDevice, data, blockNr);
 					// falls das Segment nicht geschrieben wurde
 					if (p == FALSE){
-						blockNr = nextBlock(flashDevice);
-						/*	if(hotNeutralisation == TRUE){
-								blockNr = showFirstElement(flashDevice->neutralPool)->blockNr;
-								}
-								else{
-								blockNr = showLastElement(flashDevice->neutralPool)->blockNr;
-								}
-								cleanBlock(flashDevice, blockNr);
-								delBlock(flashDevice->neutralPool, blockNr);
-								addBlock(flashDevice->neutralPool, blockNr);
-								k = flashDevice->blockArray[blockNr].writePos;
-								p = writeSegmentToBlock(flashDevice, data[i], blockNr);	*/
+						//lösche den alten Min/Max des neutralen Pools
+						cleanBlock(flashDevice, oldBlock);
+						delBlock(flashDevice->neutralPool, oldBlock);
+						addBlock(flashDevice->neutralPool, oldBlock);
+						blockNr = oldBlock;
 					}
 					else {
+						invalidationOfOldIndex(flashDevice, spareBlock, i);
 						//Adressupdate								
-						setMapT(flashDevice, blockNr, k, mappingData[i]);
+						setMapT(flashDevice, blockNr, writePos, tempAddress);
 					}
 				} while (p == FALSE);
 			}
 			
+			//lösche den verwendeten SpareBlock
+			cleanBlock(flashDevice, spareBlock);
+			if( isElementOfList(flashDevice->neutralPool, spareBlock) == TRUE){
+				delBlock(flashDevice->neutralPool, spareBlock);
+				addBlock(flashDevice->neutralPool, spareBlock);
+			}
+			if( isElementOfList(flashDevice->hotPool, spareBlock) == TRUE){
+				delBlock(flashDevice->hotPool, spareBlock);
+				addBlock(flashDevice->hotPool, spareBlock);
+			}
+			if( isElementOfList(flashDevice->coldPool, spareBlock) == TRUE){
+				delBlock(flashDevice->coldPool, spareBlock);
+				addBlock(flashDevice->coldPool, spareBlock);
+			}
+			
+
 			//Update des Blocks in Pool
 			if (delBlock(pool, deletedBlock) == TRUE){
 				addBlock(pool, deletedBlock);
 			}
-
-			//free für allozierte Variablen
-		    free(mappingData);
-			for(i = 0; i < getBlockSegmentCount(); i++){
-				free(data[i]);
-			}
-			free(data);
+						
 			//printf("Neutralisation beendet\n");
 }
 
@@ -613,6 +618,7 @@ uint32_t nextBlock(flash_t *flashDevice){
 	uint8_t temp = FALSE;
 	
 	while(temp != TRUE){
+		//Auswahl eines komplett leeren Blocks
 	//nehme kältesten, beschreibbaren Block aus coldPool			
 	for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
 		if (flashDevice->blockArray[element->blockNr].status == ready){
@@ -638,7 +644,25 @@ uint32_t nextBlock(flash_t *flashDevice){
 			}						
 		}	
 	}
-	
+	//nehme jetzt einen nichtleeren und nichtvollen Block
+	//nehme kältesten, beschreibbaren Block aus coldPool			
+	for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
+		if (flashDevice->blockArray[element->blockNr].status == ready){
+			return element->blockNr;							
+		}
+	}
+	//nehme kältesten beschreibbaren Block aus neutralPool
+	for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
+		if (flashDevice->blockArray[element->blockNr].status == ready){
+				return element->blockNr;									
+		}
+	}
+	//nehme kältesten, beschreibbaren Block aus hotPool
+	for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
+		if (flashDevice->blockArray[element->blockNr].status == ready){
+				return element->blockNr;
+		}	
+	}
 		printerr(flashDevice);
 	}
 }
