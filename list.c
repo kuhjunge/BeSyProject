@@ -13,10 +13,10 @@ List_t *initList(Block_t *blockArray){
 	return list;
 }
 
-void freeList(List_t *list){
+void freeList(List_t *list){	
 	while(list->blockCounter > 0){
 		getFirstBlock(list);
-	}
+	}	
 	free(list);
 }
 
