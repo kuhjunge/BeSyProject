@@ -21,9 +21,6 @@
     <ClCompile Include="hw_demo.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="ftl.c">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
     <ClCompile Include="main.c">
       <Filter>Quelldateien</Filter>
     </ClCompile>
@@ -32,6 +29,9 @@
     </ClCompile>
     <ClCompile Include="test_List.c">
       <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="ftl.c">
+      <Filter>Headerdateien</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
