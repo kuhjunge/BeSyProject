@@ -37,7 +37,7 @@ void writeData(flash_t* ssd, int start, int amount, int rnd, int tc, int debug){
 		writeBlock(ssd, r, myData);
 
 		readBlock(ssd, r, myRetData);
-		if (myRetData[0] != 'A'){
+		if (myRetData[0] != myData[0]){
 			printf("Lesefehler\n\n");
 			printerr(ssd);
 		}
@@ -150,7 +150,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 	//printerr(ssd);
 	for (k = 0; k < multiplikator; k++){
 		printf("\nZyklus: %i\n", k);
-		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,0); // Speicher vorbeschreiben	
+		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,1); // Speicher vorbeschreiben	
 		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j)  +k) % 255);
@@ -158,7 +158,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 				//printf("%c", checkvalue);
 			}
 			writeBlock(ssd, i, myData);
-			//printf(".");
+			printf(".");
 		}
 		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
 			readBlock(ssd, i, myRetData);
@@ -215,7 +215,11 @@ int main(int argc, char *argv[]) {
 	
 	//FL_resetFlash();
 	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
-	mapping_test(ssd, flMe, 500, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//Test am Limit
+	//mapping_test(ssd, flMe, 200, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	
+	//Test für BadBlock-Verhalten, Festplatte nicht ganz voll
+	mapping_test(ssd, flMe, 2000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT-5, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	// Overload Test
 	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?

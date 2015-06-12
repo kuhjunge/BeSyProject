@@ -97,6 +97,7 @@ typedef struct flash_struct
 	List_t *hotPool;
 	List_t *coldPool;
 	List_t *neutralPool;
+	uint32_t badBlockCounter;
 	double AVG;// globaler AVG
 } flash_t;
 
