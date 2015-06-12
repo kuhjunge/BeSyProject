@@ -171,15 +171,22 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
 	uint32_t tempAddress = 0, writePos, p;
 
+	if (fromBlock == toBlock){
+		printf("Identischer Block! Suche neuen Block!");
+		toBlock = nextBlock(flashDevice, TRUE);
+		flashDevice->blockArray[fromBlock].status = used;
+	}
+
 	for (p = 0; p < getBlockSegmentCount(); p++){
-		if (segmentStatus(flashDevice, fromBlock, p) == assigned){
+		//if (segmentStatus(flashDevice, fromBlock, p) == assigned){
+		if (mapping(flashDevice, getMapT(flashDevice, fromBlock, p)) != getMappingTableSize()){
 			tempAddress = getMapT(flashDevice, fromBlock, p);
-			readBlockIntern(flashDevice, fromBlock, (uint16_t)p / FL_getPagesPerBlock(), (uint16_t) p % FL_getPagesPerBlock(), data);
+			readBlockIntern(flashDevice, fromBlock, (uint16_t)p / FL_getPagesPerBlock(), (uint16_t)p % FL_getPagesPerBlock(), data);
 			writePos = flashDevice->blockArray[toBlock].writePos;
 			if (writeSegmentToBlock(flashDevice, data, toBlock) == FALSE){
 				if (flashDevice->freeBlocks > 0)
 				{
-					toBlock = nextBlock(flashDevice, FALSE);
+					toBlock = nextBlock(flashDevice, TRUE);
 					p--;
 				}
 				else{
@@ -317,7 +324,7 @@ uint8_t deleteBlock(flash_t *flashDevice, uint16_t deletedBlock, uint16_t inPool
 	if (flashDevice->freeBlocks == 0){
 		return FALSE;
 	}
-	spareBlock = nextBlock(flashDevice,FALSE);
+	spareBlock = nextBlock(flashDevice,TRUE);
 
 	//Lösche Block
 	// kopiere Inhalt in spareBlock, lösche deletedBlock
@@ -462,7 +469,7 @@ void setMapT(flash_t *flashDevice, uint16_t block, uint32_t seg, uint32_t v){
 	}
 	if (mapping(flashDevice,getMapT(flashDevice, block, seg)) != getMappingTableSize()){
 		printf("Warnung! Mappingtabelle inkonsistent!");
-		//printerr(flashDevice);
+		printerr(flashDevice);
 	}
 	if (inval != getMappingTableSize() && inval != hw_addr){
 		flashDevice->invalidCounter++;
@@ -601,8 +608,8 @@ uint8_t readBlockIntern(flash_t *flashDevice, uint16_t block, uint16_t page, uin
 uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 
 	uint16_t block = flashDevice->actWriteBlock;
-	uint16_t page = flashDevice->blockArray[flashDevice->actWriteBlock].writePos / FL_getPagesPerBlock();
-	uint16_t bp_index = flashDevice->blockArray[flashDevice->actWriteBlock].writePos % FL_getPagesPerBlock();
+	uint16_t page = flashDevice->blockArray[block].writePos / FL_getPagesPerBlock();
+	uint16_t bp_index = flashDevice->blockArray[block].writePos % FL_getPagesPerBlock();
 	uint16_t count;
 	uint32_t index_old;
 
@@ -610,8 +617,11 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		return FALSE;
 	}
 	// Der Block auf dem geschrieben wird, ist nicht beschreibbar
-	if (flashDevice->blockArray[block].status != ready){ 
-		block = nextBlock(flashDevice, FALSE);		
+	if (flashDevice->blockArray[block].status != ready){
+		flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);
+		block = flashDevice->actWriteBlock;
+		page = flashDevice->blockArray[block].writePos / FL_getPagesPerBlock();
+		bp_index = flashDevice->blockArray[block].writePos % FL_getPagesPerBlock();
 	}	
 	// Daten beschreiben
 	count = FL_writeData(block, page, bp_index  *LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data);
@@ -626,13 +636,13 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 
 	// Auswahl des nächsten Schreibortes
 	// position weiterzählen wenn innerhalb des selben blockes
-	if (flashDevice->blockArray[flashDevice->actWriteBlock].writePos < getBlockSegmentCount() - 1){ 
-		flashDevice->blockArray[flashDevice->actWriteBlock].writePos++;
+	if (flashDevice->blockArray[block].writePos < getBlockSegmentCount() - 1){
+		flashDevice->blockArray[block].writePos++;
 	}
 	// oder einen neuen Block auswählen
 	else { 
 		// alten Block abschließen
-		flashDevice->blockArray[flashDevice->actWriteBlock].status = used;
+		flashDevice->blockArray[block].status = used;
 		flashDevice->freeBlocks--;		
 		// Freien Block finden und nutzen
 		if (DEBUG_MESSAGE == TRUE) {
@@ -1045,7 +1055,7 @@ void printerr(flash_t *flashDevice){
 		if (userInput == 'j')
 		{
 			printf("Es folgt die umgekehrte Detail Mapping Table\n");
-			for (j = 1; j < getMappingTableSize() - 2 + 1; j += 2){
+			for (j = 1; j < getMappingTableSize() - (SPARE_BLOCKS * LOGICAL_BLOCK_DATASIZE) + 1; j += 2){
 				addr = mapping(flashDevice, j);
 				invaddr = getMapT(flashDevice, addr / getBlockSegmentCount(), addr % getBlockSegmentCount());
 				check = '*';
