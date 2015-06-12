@@ -66,6 +66,7 @@ uint8_t writeBlock(flash_t *flashDevice,uint32_t index, uint8_t *data);
   *gibt die Struktur der flash_t Datenstruktur auf der Konsole aus
  */
 void printerr(flash_t *flashDevice);
+void printLogicalToHW(flash_t *flashDevice, uint32_t index);
 
 #endif  / *__FTL__ */ 
 
