@@ -81,7 +81,7 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data);
 /*
  *	Kopiert einen Block in den anderen
  */
-void moveblock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock);
+void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock);
 
 /* 
  *	WearLeveling Algorithmus nach [TC11]
@@ -169,14 +169,14 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t blo
 	return TRUE;
 }
 
-void moveblock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock){
+void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
 	uint32_t tempAddress = 0, writePos, p;
 
 	for (p = 0; p < getBlockSegmentCount(); p++){
 		if (segmentStatus(flashDevice, fromBlock, p) == assigned){
 			tempAddress = getMapT(flashDevice, fromBlock, p);
-			readBlockIntern(flashDevice, fromBlock, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data);
+			readBlockIntern(flashDevice, fromBlock, p / FL_getPagesPerBlock(), p % FL_getPagesPerBlock(), data);
 			invalidationOfOldIndex(flashDevice, fromBlock, p);
 			writePos = flashDevice->blockArray[toBlock].writePos;
 			writeSegmentToBlock(flashDevice, data, toBlock);
@@ -193,13 +193,14 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 	uint32_t tempAddress = 0;
 	uint32_t spareBlock = 0;
 	uint32_t blockNr = getMappingTableSize();
-	uint32_t writePos, data_position = 0, oldBlock;	
+	uint32_t writePos, oldBlock;	
 	
 	//wähle spareBlock aus
 	spareBlock = nextBlock(flashDevice);
 
-		//step 1 kopiere valide Segmente in spareBlock			
-			moveblock(flashDevice, deletedBlock, spareBlock);
+		//step 1 kopiere valide Segmente in spareBlock
+			moveBlock(flashDevice, deletedBlock, spareBlock);
+			printf("Tausche Block %i mit %i\n", deletedBlock, spareBlock);
 			//step 2 lösche Block und setze Zähler hoch
 			cleanBlock(flashDevice, deletedBlock);			
 
@@ -227,7 +228,8 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 			else{
 				blockNr = showLastElement(flashDevice->neutralPool)->blockNr;
 			}
-			moveblock(flashDevice, blockNr, deletedBlock);
+			moveBlock(flashDevice, blockNr, deletedBlock);
+			printf("Tausche Block %i mit %i\n", blockNr, deletedBlock);
 
 			//speichere den eben verwendeten Block zwischen
 			oldBlock = blockNr;
@@ -241,7 +243,9 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 			else{
 				blockNr = showFirstElement(flashDevice->neutralPool)->blockNr;
 			}			
-			for (i = 0; i < data_position; i++){
+
+			for (i = 0; i < flashDevice->blockArray[spareBlock].writePos; i++){
+				printf("Tausche Block %i mit [%i]\n", spareBlock, blockNr);
 				do {
 					tempAddress = getMapT(flashDevice, spareBlock, i);
 					readBlockIntern(flashDevice, spareBlock, i / FL_getPagesPerBlock(), (i % FL_getPagesPerBlock()), data);					
@@ -250,6 +254,7 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 					// falls das Segment nicht geschrieben wurde
 					if (p == FALSE){
 						//lösche den alten Min/Max des neutralen Pools
+						printerr(flashDevice);
 						cleanBlock(flashDevice, oldBlock);
 						delBlock(flashDevice->neutralPool, oldBlock);
 						addBlock(flashDevice->neutralPool, oldBlock);
@@ -391,7 +396,7 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 						
 		//Average Recalculation Hot
 		recalculationAVG(flashDevice->hotPool);
-		/*
+		
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
 					
@@ -400,7 +405,7 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 			neutralisation(flashDevice, flashDevice->hotPool, deletedBlock, TRUE);		
 			return;
 		}
-		*/
+		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 2);
 	}
@@ -409,14 +414,14 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
-		/*
+		
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
 			//Neutralisation
 			//printf("\nkalte neutralisation Block: %i \n", deletedBlock);
 			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);		
 			return;			
-		}*/
+		}
 		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 3);
