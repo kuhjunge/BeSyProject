@@ -530,10 +530,7 @@ uint8_t garbageCollector(flash_t *flashDevice){
 		k++;		
 	}
 	//Überprüfe Anzahl freeBlocks
-	checkFreeBlocks(flashDevice);
-	if(flashDevice->freeBlocks == 0 && flashDevice->invalidCounter > getBlockSegmentCount() ){
-		return garbageCollector(flashDevice);		
-	}
+	checkFreeBlocks(flashDevice);	
 	if(flashDevice->freeBlocks == 0){
 		return FALSE;
 	}
