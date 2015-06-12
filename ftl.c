@@ -98,8 +98,9 @@ void garbageCollector(flash_t *flashDevice);
 
 /* 
  *	Löscht den Block auf der Hardware
+ *	der Rückgabewert ist als boolscher Wert zu interpretieren
  */
-void cleanBlock(flash_t *flashDevice, uint32_t block);
+uint8_t cleanBlock(flash_t *flashDevice, uint32_t block);
 
 // Funktionen FTL lokal
 ////////////////////////////////////////////////////////////////////
@@ -185,7 +186,6 @@ void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock){
 		}
 	}
 }
-
 
 void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, uint8_t hotNeutralisation){
 	uint32_t p, i, k;
@@ -304,22 +304,17 @@ void checkFreeBlocks(flash_t *flashDevice){
 
 void deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool){
 	uint32_t p, i, spareBlock, writePos, tempAddress;
-	uint8_t data2[LOGICAL_BLOCK_DATASIZE];	
+	uint8_t data2[LOGICAL_BLOCK_DATASIZE], temp;		
 	spareBlock = nextBlock(flashDevice);
 
 	//Lösche Block
-	// kopiere Inhalt zwischen, lösche deletedBlock und schreibe Inhalt neu
-			for (p = 0; p < getBlockSegmentCount(); p++){								
-				if(segmentStatus(flashDevice, deletedBlock, p) == assigned){
-					tempAddress = getMapT(flashDevice, deletedBlock, p);									
-					readBlockIntern(flashDevice, deletedBlock, p / FL_getPagesPerBlock(), (p % FL_getPagesPerBlock()), data2);										
-					invalidationOfOldIndex(flashDevice, deletedBlock, p);					
-					writePos = flashDevice->blockArray[spareBlock].writePos;
-					writeSegmentToBlock(flashDevice, data2, spareBlock);
-					setMapT(flashDevice, spareBlock, writePos, tempAddress);
-				}				
+	// kopiere Inhalt in spareBlock, lösche deletedBlock
+			moveBlock(flashDevice, deletedBlock, spareBlock);
+			temp = cleanBlock(flashDevice, deletedBlock);
+			//falls ein BadBlock entstanden ist
+			if(temp == FALSE){
+				return;
 			}
-			cleanBlock(flashDevice, deletedBlock);
 			//Update des Blocks in Pool
 			if(inPool == 1){									
 				delBlock(flashDevice->neutralPool, deletedBlock);				
@@ -524,7 +519,7 @@ void garbageCollector(flash_t *flashDevice){
 	}	*/
 }
 
-void cleanBlock(flash_t *flashDevice, uint32_t block){
+uint8_t cleanBlock(flash_t *flashDevice, uint32_t block){
 	uint16_t i = 0;
 	//Hardware Block löschen
 	if (FL_deleteBlock(block) == TRUE){
@@ -535,12 +530,23 @@ void cleanBlock(flash_t *flashDevice, uint32_t block){
 		flashDevice->blockArray[block].writePos = 0;
 		flashDevice->blockArray[block].status = ready; // Status auf Ready setzen
 		flashDevice->freeBlocks++;
+		return TRUE;
 	}
 	else {
+		flashDevice->invalidCounter = flashDevice->invalidCounter - flashDevice->blockArray[block].invalidCounter;
 		flashDevice->blockArray[block].status = badBlock; // Status auf BadBlock setzen
 		printf("Fehler! BadBlock (%i) \n", block);
-		//printerr(flashDevice);
-		garbageCollector(flashDevice); // nochmal cleanen
+		//Herausnehmen aus Pools
+		if( isElementOfList(flashDevice->neutralPool, block) == TRUE){
+			delBlock(flashDevice->neutralPool, block);
+		}
+		if( isElementOfList(flashDevice->hotPool, block) == TRUE){
+			delBlock(flashDevice->hotPool, block);
+		}
+		if( isElementOfList(flashDevice->coldPool, block) == TRUE){
+			delBlock(flashDevice->coldPool, block);			
+		}
+		return FALSE;
 	}
 
 }
@@ -626,50 +632,52 @@ uint32_t nextBlock(flash_t *flashDevice){
 	
 	while(temp != TRUE){
 		//Auswahl eines komplett leeren Blocks
-	//nehme kältesten, beschreibbaren Block aus coldPool			
-	for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
-		if (flashDevice->blockArray[element->blockNr].status == ready){
-			if(flashDevice->blockArray[element->blockNr].writePos == 0){
-				return element->blockNr;				
+		//nehme kältesten, beschreibbaren Block aus coldPool			
+		for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
+			if (flashDevice->blockArray[element->blockNr].status == ready){
+				if(flashDevice->blockArray[element->blockNr].writePos == 0){
+					return element->blockNr;				
+				}
 			}
 		}
-	}
-	//nehme kältesten beschreibbaren Block aus neutralPool
-	for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
-		if (flashDevice->blockArray[element->blockNr].status == ready){
-			if(flashDevice->blockArray[element->blockNr].writePos == 0){
-				return element->blockNr;
-			}
+		//nehme kältesten beschreibbaren Block aus neutralPool
+		for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
+			if (flashDevice->blockArray[element->blockNr].status == ready){
+				if(flashDevice->blockArray[element->blockNr].writePos == 0){
+					return element->blockNr;
+				}
 									
+			}
 		}
-	}
-	//nehme kältesten, beschreibbaren Block aus hotPool
-	for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
-		if (flashDevice->blockArray[element->blockNr].status == ready){
-			if(flashDevice->blockArray[element->blockNr].writePos == 0){
-				return element->blockNr;
-			}						
-		}	
-	}
-	//nehme jetzt einen nichtleeren und nichtvollen Block
-	//nehme kältesten, beschreibbaren Block aus coldPool			
-	for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
-		if (flashDevice->blockArray[element->blockNr].status == ready){
+		//nehme kältesten, beschreibbaren Block aus hotPool
+		for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
+			if (flashDevice->blockArray[element->blockNr].status == ready){
+				if(flashDevice->blockArray[element->blockNr].writePos == 0){
+					return element->blockNr;
+				}						
+			}	
+		}
+
+		//nehme jetzt einen nichtleeren und nichtvollen Block
+		//nehme kältesten, beschreibbaren Block aus coldPool			
+		for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
+			if (flashDevice->blockArray[element->blockNr].status == ready){
 			return element->blockNr;							
+			}
 		}
-	}
-	//nehme kältesten beschreibbaren Block aus neutralPool
-	for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
-		if (flashDevice->blockArray[element->blockNr].status == ready){
+		//nehme kältesten beschreibbaren Block aus neutralPool
+		for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
+			if (flashDevice->blockArray[element->blockNr].status == ready){
 				return element->blockNr;									
+			}
 		}
-	}
-	//nehme kältesten, beschreibbaren Block aus hotPool
-	for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
-		if (flashDevice->blockArray[element->blockNr].status == ready){
+		//nehme kältesten, beschreibbaren Block aus hotPool
+		for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
+			if (flashDevice->blockArray[element->blockNr].status == ready){
 				return element->blockNr;
-		}	
-	}
+			}	
+		}
+		printf("Keinen freien Block in Pools gefunden.\n");
 		printerr(flashDevice);
 	}
 }
