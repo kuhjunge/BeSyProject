@@ -16,7 +16,7 @@ List_t *initList(Block_t *blockArray){
 void freeList(List_t *list){	
 	while(list->blockCounter > 0){
 		getFirstBlock(list);
-	}	
+	}		
 	free(list);
 }
 
@@ -167,15 +167,16 @@ uint16_t EC(List_t *list, uint32_t blockNr){
 }
 
 uint8_t addBlock(List_t *list, uint32_t blockNr){
-	ListElem_t *element = (ListElem_t*)malloc(sizeof(ListElem_t));
+	ListElem_t *element = NULL;
 	ListElem_t *position = NULL;
 
 	//Fehlerfall
 	if( blockNr < 0 || isElementOfList(list, blockNr) == TRUE){
-		free(element);
+		
 		return FALSE;
 	}
 
+	element = (ListElem_t*)malloc(sizeof(ListElem_t));
 	element->blockNr = blockNr;
 	element->next = NULL;
 	element->prev = NULL;
@@ -250,7 +251,7 @@ uint8_t addBlock(List_t *list, uint32_t blockNr){
 }
 
 uint32_t getFirstBlock(List_t *list){
-	uint32_t value = -1;
+	uint32_t value = 0;
 
 	if(list->blockCounter <= 0){
 		return value;
@@ -261,12 +262,12 @@ uint32_t getFirstBlock(List_t *list){
 		return value;
 	}
 	else{
-		return -1;
+		printf("Fehler in getFirstBlock()\n");
 	}
 }
 
 uint32_t getLastBlock(List_t *list){	
-	uint32_t value = -1;
+	uint32_t value = 0;
 
 	if(list->blockCounter <= 0){
 		return value;
@@ -277,6 +278,6 @@ uint32_t getLastBlock(List_t *list){
 		return value;
 	}
 	else{
-		return -1;
+		printf("Fehler in getLastBlock()\n");
 	}
 }
