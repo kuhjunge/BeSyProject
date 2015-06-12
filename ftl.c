@@ -78,6 +78,11 @@ void deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool);
  */
 uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data);
 
+/*
+ *	Kopiert einen Block in den anderen
+ */
+void moveblock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock);
+
 /* 
  *	WearLeveling Algorithmus nach [TC11]
  *	Übergabeparameter ist eine Instanz von flash_t und der gerade gelöschte Block
@@ -386,7 +391,7 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 						
 		//Average Recalculation Hot
 		recalculationAVG(flashDevice->hotPool);
-		
+		/*
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
 					
@@ -395,7 +400,7 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 			neutralisation(flashDevice, flashDevice->hotPool, deletedBlock, TRUE);		
 			return;
 		}
-		
+		*/
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 2);
 	}
@@ -404,14 +409,14 @@ void wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
-		
+		/*
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
 			//Neutralisation
 			//printf("\nkalte neutralisation Block: %i \n", deletedBlock);
 			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);		
 			return;			
-		}
+		}*/
 		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 3);

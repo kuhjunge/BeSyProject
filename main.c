@@ -71,7 +71,6 @@ void load_test(flash_t* ssd, flashMem_t *flMe, int tc, int segmax, int rnd){
 
 /*
 Der mountmapping_test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind.
-Von Chris Deter
 
 ssd : Datenstruktur
 flMe: Übergabeparameter für Datenstruktur
@@ -127,7 +126,6 @@ void mountmapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, u
 
 /*
 	Der Mapping Test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind.
-	Von Chris Deter
 
 	ssd : Datenstruktur
 	flMe: Übergabeparameter für Datenstruktur
@@ -179,15 +177,35 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 	printf("Mappingtest erfolgreich\n");
 }
 
+/*
+	Der Mapping Test schreibt erst den Flashspeicher voll mit Daten und prüft anschließend ob alle Daten erreichbar sind.
+
+	ssd : Datenstruktur
+	flMe: Übergabeparameter für Datenstruktur
+	multiplikator : Wie oft gemountet und ungemountet wird
+	
+*/
+void mount_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator){
+	uint32_t i = 0;
+
+	for(i = 0; i < multiplikator; i++){
+		mount(flMe);	
+		unmount(ssd);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	int blocksegment = 16;
 	flash_t* ssd = NULL;
 	flashMem_t *flMe = NULL;
 
 	srand((unsigned int)time(NULL));
-	FL_resetFlash();
+
+	FL_resetFlash();	
 	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
-	//mountmapping_test(ssd, flMe, 4, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mountmapping_test(ssd, flMe, 10, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//überprüfe, ob mehrfach mount/unmount funktioniert
+	mount_test(ssd, flMe, 20);
 
 	FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
