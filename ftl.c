@@ -446,28 +446,27 @@ uint32_t getMapT(flash_t *flashDevice, int block, int seg){
 }
 
 void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
+	uint32_t hw_addr = (block  *getBlockSegmentCount()) + seg;
+	// Auto Invalidieren
+	/*uint32_t inval = mapping(flashDevice, v);
+	if (inval != getMappingTableSize()){
+		flashDevice->mappingTable[inval] = 0;
+		flashDevice->invalidCounter++;
+		flashDevice->blockArray[inval / FL_getBlockCount()].invalidCounter++;
+		flashDevice->mappingTableRev[v] = getMappingTableSize();
+	}*/
+
 	// Sonderfall Index auf Null setzten (invalidieren)
 	if (v == getMappingTableSize()){
-		flashDevice->mappingTableRev[getMapT(flashDevice, block, seg)] = getMappingTableSize();
+		hw_addr = getMappingTableSize();
 	}
-	else {
 		// Index updaten
-		flashDevice->mappingTableRev[v] = (block  *getBlockSegmentCount()) + seg;
-	}
-	flashDevice->mappingTable[(block  *getBlockSegmentCount()) + seg] = v;
+	flashDevice->mappingTableRev[v] = hw_addr;
+	flashDevice->mappingTable[hw_addr] = v;
 }
 
 // Gibt 512 Speicherplatz representation zurück [Blocksegment]
 uint32_t mapping(flash_t *flashDevice, uint32_t index){
-	/*uint32_t target;
-	uint32_t i = 0;
-	uint32_t x = getMappingTableSize();
-
-	for (i = 0; i < x; i++){
-		target = getMapT(flashDevice, i / getBlockSegmentCount(), i % getBlockSegmentCount());
-		if (target == index){ return i; }
-	}
-	return x;*/
 	if (index == 0) return getMappingTableSize();
 	return flashDevice->mappingTableRev[index];
 }
@@ -692,6 +691,7 @@ uint32_t nextBlock(flash_t *flashDevice){
 		}		
 		printf("Keinen freien Block in Pools gefunden.\n");
 		printerr(flashDevice);
+		return flashDevice->actWriteBlock; // Aktuellen Schreibblock zurück geben
 	}
 }
 

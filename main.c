@@ -40,6 +40,7 @@ void writeData(flash_t* ssd, int start, int amount, int rnd, int tc, int debug){
 		if (myRetData[0] != myData[0]){
 			printf("Lesefehler\n\n");
 			printerr(ssd);
+			return;
 		}
 	}
 }
@@ -135,9 +136,9 @@ void mountmapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, u
 	blockcount: Wie viele Blöcke es insgesammt gibt (32)
 	blocksegment : Anzahl der beschreibbaren Einheiten eines Blockes (16)
 */
-void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32_t logicalsize, int spare, int blockcount, uint32_t blocksegment){
-	uint32_t i, j, k;
-	uint8_t checkvalue;
+void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32_t logicalsize, int spare, int blockcount, uint32_t blocksegment, uint8_t showPoints){
+	uint32_t i, j, k, checki;
+	uint8_t checkvalue, fail = FALSE;
 	uint8_t myData[16], myRetData[16];
 	printf("Mount \n");
 	//FL_resetFlash(); // Start der Simulation
@@ -149,18 +150,32 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 	writeData(ssd, 0, blocksegment, 0,  blocksegment,0); // Speicher vorbeschreiben
 	//printerr(ssd);
 	for (k = 0; k < multiplikator; k++){
+		checki = (blockcount - spare)* blocksegment;
 		printf("\nZyklus: %i\n", k);
-		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,1); // Speicher vorbeschreiben	
-		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
+		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,showPoints); // Speicher vorbeschreiben	
+		for (i = blocksegment; i <= checki; i++){
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j)  +k) % 255);
 				myData[j] = checkvalue;
-				//printf("%c", checkvalue);
+				//printf("%c", checkvalue); 
 			}
-			writeBlock(ssd, i, myData);
-			printf(".");
+			if (writeBlock(ssd, i, myData) == FALSE){
+				if (i > 0){
+					// Schreibs und Leseschleife unterbrechen
+					checki = i -1; 
+				}
+				else{
+					i = 0;
+				}
+				// Zyklus Schleife unterbrechen
+				multiplikator = 0;
+			}
+			if (showPoints != 0) {
+				printf(".");
+			}
+
 		}
-		for (i = blocksegment; i <= (blockcount - spare)* blocksegment; i++){
+		for (i = blocksegment; i <= checki; i++){
 			readBlock(ssd, i, myRetData);
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j) + k) % 255);
@@ -205,7 +220,7 @@ int main(int argc, char *argv[]) {
 	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
 	//mountmapping_test(ssd, flMe, 10, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	//überprüfe, ob mehrfach mount/unmount funktioniert
-	mount_test(ssd, flMe, 20);
+	//mount_test(ssd, flMe, 20);
 
 	FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
@@ -219,7 +234,7 @@ int main(int argc, char *argv[]) {
 	//mapping_test(ssd, flMe, 200, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	//Test für BadBlock-Verhalten, Festplatte nicht ganz voll
-	mapping_test(ssd, flMe, 2000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT-5, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(ssd, flMe, 2000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT-5, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	// Overload Test
 	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
