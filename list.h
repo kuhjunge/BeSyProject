@@ -32,13 +32,13 @@ uint8_t delBlock(List_t *list, uint32_t blockNr);
 *	Gebe den ersten Block dieser Liste zurück
 *	und entferne aus Liste
 */
-uint32_t getFirstBlock(List_t *list);
+uint16_t getFirstBlock(List_t *list);
 
 /*
 *	Gebe den letzten Block dieser Liste zurück
 *	und entferne aus Liste
 */
-uint32_t getLastBlock(List_t *list);
+uint16_t getLastBlock(List_t *list);
 
 /*
 *	Berechne AVG dieser List nach einem neuen Löschvorgang neu

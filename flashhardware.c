@@ -28,7 +28,7 @@ uint8_t FL_resetFlash() {
 	return FL_isInitialised(&flashMem); 
 }
 
-uint8_t FL_deleteBlock (uint16_t nr) {
+uint8_t FL_deleteBlock (uint32_t nr) {
 	uint32_t i,j,r; 
 	if (!FL_isInitialised(&flashMem)) return FALSE;
 	if (flashMem.block[nr].dead) return FALSE;	// tote Blöcke nicht löschen

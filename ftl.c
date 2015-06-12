@@ -16,7 +16,7 @@ uint32_t getMappingTableSize();
 /* 
  *	Gibt die Anzahl der adressierbaren logischen Blöcke zurück
  */
-uint32_t getLogBlockCount();
+uint16_t getLogBlockCount();
 
 // Funktionen Allocator
 ////////////////////////////////////////////////////////////////////
@@ -25,13 +25,13 @@ uint32_t getLogBlockCount();
   *Übersetzt die physikalische Position in die  logischen Nummer eines Datenblocks
   *Gibt die logische Nummer eines Datenblocks zurück
  */
-uint32_t getMapT(flash_t *flashDevice, int block, int seg);
+uint32_t getMapT(flash_t *flashDevice, uint16_t block, uint32_t seg);
 
 /* Setter Map
   *Verknüpft die logischen Nummer eines Datenblocks mit der physikalische Position in der Tabelle
   *Gibt die logische Nummer eines Datenblocks zurück
  */
-void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v);
+void setMapT(flash_t *flashDevice, uint16_t block, uint32_t seg, uint32_t v);
 
 /* mapping
   *Übersetzt die logischen Nummer eines Datenblocks in die physikalische Position 
@@ -42,12 +42,12 @@ uint32_t mapping(flash_t *flashDevice, uint32_t index);
 /* 
   *Gibt Auskunft über den Status eines Elements
  */
-StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint16_t segment);
+StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint32_t segment);
 
 /* 
   *Löscht einen Eintrag in der Map und invalidiert das dazugehörige Segment
  */
-void invalidationOfOldIndex(flash_t *flashDevice, uint32_t block, uint32_t segment);
+void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint32_t segment);
 
 // Funktionen WearLeveling
 ////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ void invalidationOfOldIndex(flash_t *flashDevice, uint32_t block, uint32_t segme
  *	Schreibt ein Datensegment in einen Block
  *	Der Rückgabewert ist als Boolescher Wert zu interpretieren.
  */
-uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t block);
+uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block);
 
 /* 
  *	Grouping nach Algorithmus
@@ -66,12 +66,12 @@ void grouping(flash_t *flashDevice);
 /* 
  *	Neutralisation nach Algorithmus
  */
-void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, uint8_t hotNeutralisation);
+void neutralisation(flash_t *flashDevice, List_t *pool, uint16_t deletedBlock, uint8_t hotNeutralisation);
 
 /* 
  *	Löscht den übergebenden Block, und datet ihn im übergebenden Pool up
  */
-uint8_t deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool);
+uint8_t deleteBlock(flash_t *flashDevice, uint16_t deletedBlock, uint16_t inPool);
 
 /* 
  *	Interne Schreibfunktion
@@ -81,13 +81,13 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data);
 /*
  *	Kopiert einen Block in den anderen
  */
-void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock);
+void moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock);
 
 /* 
  *	WearLeveling Algorithmus nach [TC11]
  *	Übergabeparameter ist eine Instanz von flash_t und der gerade gelöschte Block
  */
-uint8_t wearLeveling(flash_t *flashDevice, uint32_t deletedBlock);
+uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock);
 
 // Funktionen Garbage Collector
 ////////////////////////////////////////////////////////////////////
@@ -100,14 +100,14 @@ uint8_t garbageCollector(flash_t *flashDevice);
  *	Löscht den Block auf der Hardware
  *	der Rückgabewert ist als boolscher Wert zu interpretieren
  */
-uint8_t cleanBlock(flash_t *flashDevice, uint32_t block);
+uint8_t cleanBlock(flash_t *flashDevice, uint16_t block);
 
 // Funktionen FTL lokal
 ////////////////////////////////////////////////////////////////////
 
 /*
 *	Wandelt vier uint8_t zu einem uint32_t um
-* /
+* */
 uint32_t convert8To32(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
 
 /*
@@ -118,7 +118,7 @@ void convert32To8(uint8_t *data, uint32_t source);
 /* 
  *	Gibt einen neuen beschreibbaren Block zurück(mit status == ready)
  */
-uint32_t nextBlock(flash_t *flashDevice);
+uint16_t nextBlock(flash_t *flashDevice);
 
 /* 
  *Liest einen Datenblock an der angegebene physikalischen vom Flashspeicher, der mit der
@@ -130,15 +130,17 @@ uint32_t nextBlock(flash_t *flashDevice);
  *Daten kopiert werden.
  *Der Rückgabewert ist als Boolescher Wert zu interpretieren.
 */
-uint8_t readBlockIntern(flash_t *flashDevice, uint32_t block, uint32_t page, uint32_t index, uint8_t *data);
+uint8_t readBlockIntern(flash_t *flashDevice, uint16_t block, uint16_t page, uint16_t index, uint8_t *data);
+
+void printblock(flash_t *flashDevice, uint16_t block, uint32_t segment);
 
 // Funktionsimplementation Wear-Leveler ([TC11]- Algorithmus)
 ////////////////////////////////////////////////////////////////////
 
-uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t block){
+uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block){
 	uint16_t count = 0;
-	uint32_t page;
-	uint32_t bp_index;
+	uint16_t page;
+	uint16_t bp_index;
 
 	if(block == -1){
 		return FALSE;
@@ -152,7 +154,7 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t blo
 	page = flashDevice->blockArray[block].writePos / FL_getPagesPerBlock();
 	bp_index = flashDevice->blockArray[block].writePos % FL_getPagesPerBlock();
 
-	count = FL_writeData(block, page, bp_index  *LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, segment);
+	count = FL_writeData(block, page, bp_index  * LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data);
 	// Prüfen ob wirklich entsprechende Daten geschrieben wurden	
 	if (count != LOGICAL_BLOCK_DATASIZE){
 		printf("Fehler beim Schreiben des Datensatzes! %d von %d byte geschrieben\n", count, LOGICAL_BLOCK_DATASIZE);
@@ -170,14 +172,14 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t *segment, uint32_t blo
 	return TRUE;
 }
 
-void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock){
+void moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
 	uint32_t tempAddress = 0, writePos, p;
 
 	for (p = 0; p < getBlockSegmentCount(); p++){
 		if (segmentStatus(flashDevice, fromBlock, p) == assigned){
 			tempAddress = getMapT(flashDevice, fromBlock, p);
-			readBlockIntern(flashDevice, fromBlock, p / FL_getPagesPerBlock(), p % FL_getPagesPerBlock(), data);
+			readBlockIntern(flashDevice, fromBlock, (uint16_t)p / FL_getPagesPerBlock(), (uint16_t) p % FL_getPagesPerBlock(), data);
 			invalidationOfOldIndex(flashDevice, fromBlock, p);
 			writePos = flashDevice->blockArray[toBlock].writePos;
 			writeSegmentToBlock(flashDevice, data, toBlock);
@@ -188,13 +190,13 @@ void moveBlock(flash_t* flashDevice, uint32_t fromBlock, uint32_t toBlock){
 	if (DEBUG_MESSAGE == TRUE) { printf("Inhalt von Block %i nach %i verschoben\n", fromBlock, toBlock); }
 }
 
-void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, uint8_t hotNeutralisation){
-	uint32_t p, i, k;
+void neutralisation(flash_t *flashDevice, List_t *pool, uint16_t deletedBlock, uint8_t hotNeutralisation){
+	uint32_t p, i;
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];	
 	uint32_t tempAddress = 0;
-	uint32_t spareBlock = 0;
-	uint32_t blockNr = getMappingTableSize();
-	uint32_t writePos, oldBlock;	
+	uint16_t spareBlock = 0;
+	uint16_t blockNr = FL_getBlockCount();
+	uint16_t writePos, oldBlock;
 	
 	//wähle spareBlock aus
 	spareBlock = nextBlock(flashDevice);
@@ -249,7 +251,7 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 				printf("Tausche Block %i mit [%i]\n", spareBlock, blockNr);
 				do {
 					tempAddress = getMapT(flashDevice, spareBlock, i);
-					readBlockIntern(flashDevice, spareBlock, i / FL_getPagesPerBlock(), (i % FL_getPagesPerBlock()), data);					
+					readBlockIntern(flashDevice, spareBlock, (uint16_t)i / FL_getPagesPerBlock(), (uint16_t)(i % FL_getPagesPerBlock()), data);
 					writePos = flashDevice->blockArray[blockNr].writePos;
 					p = writeSegmentToBlock(flashDevice, data, blockNr);
 					// falls das Segment nicht geschrieben wurde
@@ -293,7 +295,7 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint32_t deletedBlock, u
 }
 
 void checkFreeBlocks(flash_t *flashDevice){
-	uint32_t i, counter = 0;
+	uint16_t i, counter = 0;
 
 	for(i = 0; i < FL_getBlockCount(); i++){
 		if(flashDevice->blockArray[i].status == ready){
@@ -303,9 +305,9 @@ void checkFreeBlocks(flash_t *flashDevice){
 	flashDevice->freeBlocks = counter;
 }
 
-uint8_t deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool){
-	uint32_t p, i, spareBlock, writePos, tempAddress;
-	uint8_t data2[LOGICAL_BLOCK_DATASIZE], temp;
+uint8_t deleteBlock(flash_t *flashDevice, uint16_t deletedBlock, uint16_t inPool){
+	uint16_t spareBlock;
+	uint8_t temp;
 	if (DEBUG_MESSAGE == TRUE) { printf("loesche Block %i\n", deletedBlock); }
 	//Abfrage für badBlock-Verhalten
 	if (flashDevice->freeBlocks == 0){
@@ -339,7 +341,7 @@ uint8_t deleteBlock(flash_t *flashDevice, uint32_t deletedBlock, uint16_t inPool
 
 void grouping(flash_t *flashDevice){
 	ListElem_t *element = NULL;
-	uint32_t blockNr;
+	uint16_t blockNr;
 
 	//Überprüfung der Condition 1 und 2	
 	//beide Seiten im neutralPool
@@ -375,7 +377,7 @@ void grouping(flash_t *flashDevice){
 	}
 }
 
-uint8_t wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){		
+uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 	uint8_t temp = TRUE;
 	if (DEBUG_MESSAGE == TRUE) { printf("Wear Leveling von Block %i\n", deletedBlock); }
 	//Average Recalculation gesamt
@@ -442,11 +444,11 @@ uint8_t wearLeveling(flash_t *flashDevice, uint32_t deletedBlock){
 
 // Lokale Funktionsimplementation Allocator
 ////////////////////////////////////////////////////////////////////
-uint32_t getMapT(flash_t *flashDevice, int block, int seg){
+uint32_t getMapT(flash_t *flashDevice, uint16_t block, uint32_t seg){
 	return flashDevice->mappingTable[(block  *getBlockSegmentCount()) + seg];
 }
 
-void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
+void setMapT(flash_t *flashDevice, uint16_t block, uint32_t seg, uint32_t v){
 	uint32_t hw_addr = (block  *getBlockSegmentCount()) + seg;
 	// Auto Invalidieren
 	/*uint32_t inval = mapping(flashDevice, v);
@@ -464,6 +466,7 @@ void setMapT(flash_t *flashDevice, int block, int seg, uint32_t v){
 		// Index updaten
 	flashDevice->mappingTableRev[v] = hw_addr;
 	flashDevice->mappingTable[hw_addr] = v;
+	//if (DEBUG_MESSAGE == TRUE) { printf("Mappe L: %03i auf B: %02i S: %02i\n", v, block, seg); }
 }
 
 // Gibt 512 Speicherplatz representation zurück [Blocksegment]
@@ -472,7 +475,7 @@ uint32_t mapping(flash_t *flashDevice, uint32_t index){
 	return flashDevice->mappingTableRev[index];
 }
 
-StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint16_t segment){
+StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint32_t segment){
 	if ((flashDevice->blockArray[block].status == ready  && getMapT(flashDevice, block, segment) == 0)){ // Kompletter Block muss leer sein
 		if (flashDevice->actWriteBlock == block && flashDevice->blockArray[flashDevice->actWriteBlock].writePos > segment){
 			return invalid;
@@ -492,7 +495,7 @@ StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint16_t se
 	//empty, assigned, invalid
 }
 
-void invalidationOfOldIndex(flash_t *flashDevice, uint32_t block, uint32_t segment){
+void invalidationOfOldIndex(flash_t *flashDevice, uint16_t block, uint32_t segment){
 	setMapT(flashDevice, block , segment , 0);	
 	flashDevice->invalidCounter++;
 	flashDevice->blockArray[block].invalidCounter++;	
@@ -501,8 +504,7 @@ void invalidationOfOldIndex(flash_t *flashDevice, uint32_t block, uint32_t segme
 // Lokale Funktionsimplementation  Cleaner
 ////////////////////////////////////////////////////////////////////
 uint8_t garbageCollector(flash_t *flashDevice){	
-	uint16_t i = flashDevice->actWriteBlock;
-	uint32_t k = 0;		
+	uint16_t i = flashDevice->actWriteBlock, k = 0;		
 	uint8_t temp = TRUE;
 	uint32_t level = flashDevice->invalidCounter / FL_getBlockCount(); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
 	
@@ -539,7 +541,7 @@ uint8_t garbageCollector(flash_t *flashDevice){
 	return TRUE;
 }
 
-uint8_t cleanBlock(flash_t *flashDevice, uint32_t block){
+uint8_t cleanBlock(flash_t *flashDevice, uint16_t block){
 	uint16_t i = 0;
 	//Hardware Block löschen
 	if (FL_deleteBlock(block) == TRUE){
@@ -576,7 +578,7 @@ uint8_t cleanBlock(flash_t *flashDevice, uint32_t block){
 ////////////////////////////////////////////////////////////////////
 
 
-uint8_t readBlockIntern(flash_t *flashDevice, uint32_t block, uint32_t page, uint32_t index, uint8_t *data){
+uint8_t readBlockIntern(flash_t *flashDevice, uint16_t block, uint16_t page, uint16_t index, uint8_t *data){
 	uint16_t count = FL_readData(block, page, index  *LOGICAL_BLOCK_DATASIZE, LOGICAL_BLOCK_DATASIZE, data); // Blocksegment auslesen
 	if (count != LOGICAL_BLOCK_DATASIZE){ // Prüfen ob wirklich entsprechende Daten gelesen wurden		}
 		printf("Fehler beim Lesen des Datensatzes! %d von %d byte gelesen\n", count, LOGICAL_BLOCK_DATASIZE);
@@ -588,10 +590,10 @@ uint8_t readBlockIntern(flash_t *flashDevice, uint32_t block, uint32_t page, uin
 
 uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 
-	uint32_t block = flashDevice->actWriteBlock;
-	uint32_t page = flashDevice->blockArray[flashDevice->actWriteBlock].writePos / FL_getPagesPerBlock();
-	uint32_t bp_index = flashDevice->blockArray[flashDevice->actWriteBlock].writePos % FL_getPagesPerBlock();
-	uint32_t count;
+	uint16_t block = flashDevice->actWriteBlock;
+	uint16_t page = flashDevice->blockArray[flashDevice->actWriteBlock].writePos / FL_getPagesPerBlock();
+	uint16_t bp_index = flashDevice->blockArray[flashDevice->actWriteBlock].writePos % FL_getPagesPerBlock();
+	uint16_t count;
 	uint32_t index_old;
 
 	if(flashDevice->freeBlocks == 0){
@@ -612,7 +614,7 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	index_old =  mapping(flashDevice, index);
 	if( index_old != getMappingTableSize()){
 		// Alten Eintrag in Mapping Table und Block invalidieren		
-		invalidationOfOldIndex(flashDevice, (uint16_t)index_old / getBlockSegmentCount(), (uint16_t)index_old % getBlockSegmentCount()); 
+		invalidationOfOldIndex(flashDevice, (uint16_t)index_old / getBlockSegmentCount(),index_old % getBlockSegmentCount()); 
 	}
 	//printf("Index! %i (%i/%i/%i) \n" , index, block, page, bp_index);//TODO DEBUG-Ausgabe rausnehmen
 	// Setze Mapeintrag
@@ -630,7 +632,9 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		flashDevice->freeBlocks--;		
 		// Freien Block finden und nutzen
 		flashDevice->actWriteBlock = nextBlock(flashDevice);	
-
+		if (DEBUG_MESSAGE == TRUE) {
+			printblock(flashDevice,flashDevice->actWriteBlock, 15);
+		}
 		// Cleaner		
 		if (flashDevice->freeBlocks <= SPARE_BLOCKS ){
 			// Clean
@@ -640,63 +644,44 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	return TRUE;
 }
 
-uint32_t nextBlock(flash_t *flashDevice){
-	ListElem_t *element;	
-	uint32_t i;
-	uint8_t temp = FALSE;
-	if (DEBUG_MESSAGE == TRUE) { printf("Waehle naechsten Block\n"); }
-	while(temp != TRUE){
-		//Auswahl eines komplett leeren Blocks
-		//nehme kältesten, beschreibbaren Block aus coldPool			
-		for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-				if(flashDevice->blockArray[element->blockNr].writePos == 0){
-					return element->blockNr;				
-				}
+ListElem_t* findNextBlock(flash_t *flashDevice, List_t *list, uint8_t notNew){
+	ListElem_t *element;
+	for (element = showFirstElement(list); element != NULL; element = getNextElement(element)){
+		if (flashDevice->blockArray[element->blockNr].status == ready){
+			if (flashDevice->blockArray[element->blockNr].writePos == 0 || notNew == TRUE){
+				return element;
 			}
 		}
-		//nehme kältesten beschreibbaren Block aus neutralPool
-		for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-				if(flashDevice->blockArray[element->blockNr].writePos == 0){
-					return element->blockNr;
-				}
-									
-			}
-		}
-		//nehme kältesten, beschreibbaren Block aus hotPool
-		for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-				if(flashDevice->blockArray[element->blockNr].writePos == 0){
-					return element->blockNr;
-				}						
-			}	
-		}
-
-		//nehme jetzt einen nichtleeren und nichtvollen Block
-		//nehme kältesten, beschreibbaren Block aus coldPool			
-		
-		for (element = showFirstElement(flashDevice->coldPool); element != NULL; element = getNextElement(element)){
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-			return element->blockNr;							
-			}
-		}
-		//nehme kältesten beschreibbaren Block aus neutralPool
-		for (element = showFirstElement(flashDevice->neutralPool); element != NULL; element = getNextElement(element)){		
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-				return element->blockNr;									
-			}
-		}
-		//nehme kältesten, beschreibbaren Block aus hotPool
-		for (element = showFirstElement(flashDevice->hotPool); element != NULL; element = getNextElement(element)){
-			if (flashDevice->blockArray[element->blockNr].status == ready){
-				return element->blockNr;
-			}	
-		}		
-		printf("Keinen freien Block in Pools gefunden.\n");
-		printerr(flashDevice);
-		return flashDevice->actWriteBlock; // Aktuellen Schreibblock zurück geben
 	}
+	return NULL;
+}
+
+uint16_t nextBlock(flash_t *flashDevice){
+	ListElem_t *element;
+	if (DEBUG_MESSAGE == TRUE) { printf("Waehle naechsten Block\n"); }
+	//Auswahl eines komplett leeren Blocks
+	//nehme kältesten, beschreibbaren Block aus coldPool			
+	element = findNextBlock(flashDevice, flashDevice->coldPool, FALSE);
+	if (element != NULL) return element->blockNr;
+	//nehme kältesten beschreibbaren Block aus neutralPool
+	element = findNextBlock(flashDevice, flashDevice->neutralPool, FALSE);
+	if (element != NULL) return element->blockNr;
+	//nehme kältesten, beschreibbaren Block aus hotPool
+	element = findNextBlock(flashDevice, flashDevice->hotPool, FALSE);
+	if (element != NULL) return element->blockNr;
+	//nehme jetzt einen nichtleeren und nichtvollen Block
+	element = findNextBlock(flashDevice, flashDevice->coldPool, TRUE);
+	if (element != NULL) return element->blockNr;
+	//nehme kältesten beschreibbaren Block aus neutralPool
+	element = findNextBlock(flashDevice, flashDevice->neutralPool, TRUE);
+	if (element != NULL) return element->blockNr;
+	//nehme kältesten, beschreibbaren Block aus hotPool
+	element = findNextBlock(flashDevice, flashDevice->hotPool, TRUE);
+	if (element != NULL) return element->blockNr;
+	//nehme jetzt einen nichtleeren und nichtvollen Block	
+	printf("Keinen freien Block in Pools gefunden.\n");
+	printerr(flashDevice);
+	return flashDevice->actWriteBlock; // Aktuellen Schreibblock zurück geben;
 }
 
 // Funktionsimplementation FLT
@@ -705,12 +690,12 @@ uint32_t nextBlock(flash_t *flashDevice){
 
 flash_t  *mount(flashMem_t *flashHardware){
 	flash_t *flashDevice;
-	uint32_t i, temp, k, p;
+	uint32_t i, k, temp;
 	ListElem_t *element = NULL;
 	uint8_t *state;
 	// uint32_t pos = 0;
 	//uint8_t data[4];
-	uint32_t blockCount = 0;
+	uint16_t blockCount = 0;
 	uint32_t mappingTableCount = 0;
 	uint32_t size = 0;
 	uint32_t charCounter = 0;	
@@ -822,7 +807,7 @@ uint32_t convert8To32(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
 
 flash_t *unmount(flash_t *flashDevice){
 	uint8_t *state;
-	uint32_t i, k, temp;
+	uint32_t i, k;
 	uint32_t pos = 0;
 	uint8_t data[4];
 	uint32_t blockCount = 0;
@@ -907,7 +892,7 @@ flash_t *unmount(flash_t *flashDevice){
 	}
 
 	//Speichere auf Hardware
-	if (FL_saveState(i, state) == TRUE){
+	if (FL_saveState((uint8_t)i, state) == TRUE){
 		printf("flash_t-Abbild erfolgreich gespeichert\n");
 	}
 
@@ -928,20 +913,20 @@ uint8_t readBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	uint32_t i;
 	if (flashDevice == NULL) return FALSE;
 	if (DEBUG_MESSAGE == TRUE) { printf("Lesezugriff %i\n", index); }
-	if(index > (FL_getBlockCount() - SPARE_BLOCKS)  *getBlockSegmentCount()){
+	if (index > (FL_getBlockCount() - (uint16_t)SPARE_BLOCKS)  * getBlockSegmentCount()){
 		printf("Logischer Block nicht mehr im Wertebereich des Datentraegers. 0 bis %i logische Bloecke adressierbar.\n", getLogBlockCount());
 		return FALSE;
 	}
 	//Index immer um 1 erhöht, da index == 0 für andere Zwecke verwendet wird.
 	i = mapping(flashDevice, index + 1); // Mapping
-	return readBlockIntern(flashDevice, i / getBlockSegmentCount(), (i % getBlockSegmentCount()) / FL_getPagesPerBlock(), ((i % getBlockSegmentCount()) % FL_getPagesPerBlock()), data); // Blocksegment auslesen
+	return readBlockIntern(flashDevice, (uint16_t)i / getBlockSegmentCount(), (uint16_t)(i % getBlockSegmentCount()) / FL_getPagesPerBlock(), (uint16_t)((i % getBlockSegmentCount()) % FL_getPagesPerBlock()), data); // Blocksegment auslesen
 
 }
 
 uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	if (flashDevice == NULL) return FALSE;
 	if (DEBUG_MESSAGE == TRUE) { printf("Schreibzugriff %i\n", index); }
-	if(index > (FL_getBlockCount() - SPARE_BLOCKS)  *getBlockSegmentCount()){
+	if (index > (FL_getBlockCount() - (uint16_t)SPARE_BLOCKS)  *getBlockSegmentCount()){
 		printf("Logischer Block nicht mehr im Wertebereich des Datentraegers. 0 bis %i logische Bloecke adressierbar.\n", getLogBlockCount());
 		return FALSE;
 	}	
@@ -957,19 +942,19 @@ uint8_t writeBlock(flash_t *flashDevice, uint32_t index, uint8_t *data){
 // Getter für "Konstanten" Implementation
 ////////////////////////////////////////////////////////////////////
 uint32_t getBlockSegmentCount(){
-	return FL_getPagesPerBlock()  *FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE;
+	return  FL_getPagesPerBlock()  * FL_getPageDataSize() / LOGICAL_BLOCK_DATASIZE;
 }
 uint32_t getMappingTableSize(){
 	return FL_getBlockCount()  *getBlockSegmentCount();
 }
-uint32_t getLogBlockCount(){
-	return (FL_getBlockCount() - SPARE_BLOCKS)  *getBlockSegmentCount();
+uint16_t getLogBlockCount(){
+	return   (uint16_t) (FL_getBlockCount() - SPARE_BLOCKS)  * getBlockSegmentCount();
 }
 
 // DEBUG Funktionsimplementation FLT
 ////////////////////////////////////////////////////////////////////
 
-void printblock(flash_t *flashDevice, uint32_t block, uint32_t segment){
+void printblock(flash_t *flashDevice, uint16_t block, uint32_t segment){
 	uint32_t j;
 	char marker, error;
 	printf("\nBlock %02i:\n", block);
@@ -1000,12 +985,12 @@ void printblock(flash_t *flashDevice, uint32_t block, uint32_t segment){
 				j, getMapT(flashDevice, block, j), mapping(flashDevice, getMapT(flashDevice, block, j)), segmentStatus(flashDevice, block, j), error, marker);
 		}
 		printf("Segment: empty (0) / assigned (1) / invalid (2)\n");
-		getchar();
 }
 
 
 void printerr(flash_t *flashDevice){
-	uint32_t i, j, invCo = 0, del = 0, block, segment, calcLevel = 0;
+	uint32_t invCo = 0, del = 0, segment, calcLevel = 0;
+	uint16_t block, i;
 	char userInput, unMountErr = 'n';
 	if (flashDevice == NULL) return;
 	block = flashDevice->actWriteBlock;
@@ -1048,6 +1033,7 @@ void printerr(flash_t *flashDevice){
 			{
 			 // Block für Block
 				printblock(flashDevice, i, segment);
+				getchar();
 			}
 		}
 		printerr(flashDevice);

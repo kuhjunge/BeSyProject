@@ -152,7 +152,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 	for (k = 0; k < multiplikator; k++){
 		checki = (blockcount - spare)* blocksegment;
 		printf("\nZyklus: %i\n", k);
-		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,showPoints); // Speicher vorbeschreiben	
+		//writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,showPoints); // Speicher vorbeschreiben	
 		for (i = blocksegment; i <= checki; i++){
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j)  +k) % 255);

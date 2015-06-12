@@ -46,9 +46,9 @@ typedef enum
 */
 typedef struct Block_struct
 {
-	uint32_t writePos;
-	uint32_t deleteCounter;
-	uint32_t invalidCounter;
+	uint16_t writePos;
+	uint16_t deleteCounter;
+	uint16_t invalidCounter;
 	BlockStatus_t status;
 
 } Block_t;
@@ -61,7 +61,7 @@ typedef struct Block_struct
 typedef struct ListElem {
 	struct ListElem *prev;
 	struct ListElem *next;
-	uint32_t blockNr;
+	uint16_t blockNr;
 } ListElem_t;
 
 /*	Datenstruktur für die nach Anzahl der Löschvorgänge sortiere doppel verkettete Liste
@@ -75,7 +75,7 @@ typedef struct {
 	ListElem_t *first;
 	ListElem_t *last;
 	double AVG;
-	uint32_t blockCounter;
+	uint16_t blockCounter;
 	Block_t *blockArray;
 } List_t;
 
@@ -93,12 +93,12 @@ typedef struct flash_struct
 	uint32_t *mappingTableRev;
 	Block_t *blockArray; // Block Verwaltungsstruktur
 	uint32_t invalidCounter;	
-	uint32_t freeBlocks;
-	uint32_t actWriteBlock;
+	uint16_t freeBlocks;
+	uint16_t actWriteBlock;
 	List_t *hotPool;
 	List_t *coldPool;
 	List_t *neutralPool;
-	uint32_t badBlockCounter;
+	uint16_t badBlockCounter;
 	double AVG;// globaler AVG
 } flash_t;
 

@@ -79,7 +79,7 @@ void printList(List_t *list){
 	printf("AVG: %f, AnzahlElemente: %i/%i\n", list->AVG, counter, list->blockCounter);
 }
 
-uint8_t isElementOfList(List_t *list, uint32_t blockNr){	
+uint8_t isElementOfList(List_t *list, uint16_t blockNr){
 	ListElem_t *position;
 
 	if( list->blockCounter <= 0 || blockNr < 0){
@@ -110,7 +110,7 @@ uint16_t countElements(List_t *list){
 	return counter;
 }
 
-uint8_t delBlock(List_t *list, uint32_t blockNr){	
+uint8_t delBlock(List_t *list, uint16_t blockNr){
 	ListElem_t *position = NULL;
 
 	//Fehler
@@ -162,11 +162,11 @@ uint8_t delBlock(List_t *list, uint32_t blockNr){
 	return FALSE;
 }
 
-uint16_t EC(List_t *list, uint32_t blockNr){
+uint16_t EC(List_t *list, uint16_t blockNr){
 	return list->blockArray[blockNr].deleteCounter;
 }
 
-uint8_t addBlock(List_t *list, uint32_t blockNr){
+uint8_t addBlock(List_t *list, uint16_t blockNr){
 	ListElem_t *element = NULL;
 	ListElem_t *position = NULL;
 
@@ -250,8 +250,8 @@ uint8_t addBlock(List_t *list, uint32_t blockNr){
 	return FALSE;
 }
 
-uint32_t getFirstBlock(List_t *list){
-	uint32_t value = 0;
+uint16_t getFirstBlock(List_t *list){
+	uint16_t value = 0;
 
 	if(list->blockCounter <= 0){
 		return value;
@@ -263,11 +263,12 @@ uint32_t getFirstBlock(List_t *list){
 	}
 	else{
 		printf("Fehler in getFirstBlock()\n");
+		return FALSE;
 	}
 }
 
-uint32_t getLastBlock(List_t *list){	
-	uint32_t value = 0;
+uint16_t getLastBlock(List_t *list){
+	uint16_t value = 0;
 
 	if(list->blockCounter <= 0){
 		return value;
@@ -279,5 +280,6 @@ uint32_t getLastBlock(List_t *list){
 	}
 	else{
 		printf("Fehler in getLastBlock()\n");
+		return FALSE;
 	}
 }
