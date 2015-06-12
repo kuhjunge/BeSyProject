@@ -167,8 +167,8 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 			for (j = 0; j < logicalsize; j++){
 				checkvalue = (uint8_t)(((i * j) + k) % 255);
 				if (myRetData[j] != checkvalue){
-					printf("Mappingfehler\n");
-					//printerr(ssd);
+					printf("Mappingfehler an Adresse %i -> %c != %c \n", i, myRetData[j], checkvalue);
+					printerr(ssd);
 				}
 			}
 		}
