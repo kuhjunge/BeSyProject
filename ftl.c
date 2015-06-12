@@ -626,7 +626,8 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		flashDevice->blockArray[flashDevice->actWriteBlock].status = used;
 		flashDevice->freeBlocks--;		
 		// Freien Block finden und nutzen
-		flashDevice->actWriteBlock = nextBlock(flashDevice);				
+		flashDevice->actWriteBlock = nextBlock(flashDevice);	
+
 		// Cleaner		
 		if (flashDevice->freeBlocks <= SPARE_BLOCKS ){
 			// Clean
@@ -710,14 +711,18 @@ flash_t  *mount(flashMem_t *flashHardware){
 	uint32_t mappingTableCount = 0;
 	uint32_t size = 0;
 	uint32_t charCounter = 0;	
-
-	// Laden von flash_t	
+			
 	state = (uint8_t*)malloc(SAVE_STATE_SIZE * sizeof(uint8_t));
 	flashDevice = (flash_t*)malloc(sizeof(flash_t));
 	flashDevice->mappingTable = (uint32_t*)malloc(getMappingTableSize()*sizeof(uint32_t));
 	flashDevice->mappingTableRev = (uint32_t*)malloc((getMappingTableSize())*sizeof(uint32_t));
 	flashDevice->blockArray = (Block_t*)malloc(FL_getBlockCount()*sizeof(Block_t));
+	// Initialisiere Pools		
+	flashDevice->hotPool = initList(flashDevice->blockArray);
+	flashDevice->neutralPool = initList(flashDevice->blockArray);
+	flashDevice->coldPool = initList(flashDevice->blockArray);
 
+	// Laden von flash_t
 	if (FL_restoreState(state) == state){
 				
 		//laden		
@@ -752,12 +757,7 @@ flash_t  *mount(flashMem_t *flashHardware){
 		flashDevice->actWriteBlock = temp;
 		temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
 		flashDevice->badBlockCounter = temp;
-
-		// Initialisiere Pools
-		flashDevice->hotPool = initList(flashDevice->blockArray);
-		flashDevice->neutralPool = initList(flashDevice->blockArray);
-		flashDevice->coldPool = initList(flashDevice->blockArray);
-
+		
 		// befülle neutralPool
 		for (i = 0; i < FL_getBlockCount(); i++){
 			addBlock(flashDevice->neutralPool, i);
@@ -768,7 +768,7 @@ flash_t  *mount(flashMem_t *flashHardware){
 
 		//führe grouping durch
 		grouping(flashDevice);
-
+		
 	}
 	else{				
 
@@ -791,11 +791,6 @@ flash_t  *mount(flashMem_t *flashHardware){
 		flashDevice->invalidCounter = 0;
 		flashDevice->freeBlocks = FL_getBlockCount();
 		flashDevice->badBlockCounter = 0;
-
-		// Initialisiere Pools
-		flashDevice->hotPool = initList(flashDevice->blockArray);
-		flashDevice->neutralPool = initList(flashDevice->blockArray);
-		flashDevice->coldPool = initList(flashDevice->blockArray);
 
 		// Initialisiere AVG
 		flashDevice->AVG = 0;
