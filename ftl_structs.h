@@ -15,6 +15,7 @@
 // definiert die Größe des save_state
 #define SAVE_STATE_SIZE 3000
 
+#define DEBUG_MESSAGE TRUE
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
 *	assigned =  Speicherzelle benutzt

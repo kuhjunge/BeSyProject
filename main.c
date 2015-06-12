@@ -201,7 +201,6 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 */
 void mount_test(flash_t* ssd, flashMem_t* flMe, uint8_t logicalsize){
 	uint32_t i, j, k;
-	uint8_t checkvalue;
 	uint8_t myData[16], myRetData[16];
 	
 	printf("Mount \n");	
@@ -243,9 +242,9 @@ int main(int argc, char *argv[]) {
 	//mountmapping_test(ssd, flMe, 10, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	//schreibe ein Segment, unmount, mounte und überprüfe, ob Segment richtig gelesen wurde
-	mount_test(ssd, flMe, LOGICAL_BLOCK_DATASIZE);
+	//mount_test(ssd, flMe, LOGICAL_BLOCK_DATASIZE);
 
-	FL_resetFlash();
+	//FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
 	 //load_test(ssd, flMe, 2000, 200, 1);
 	// Komplette Festplatte wird mit Random Datensätzen vollgeschrieben (Grenzwerttest)
@@ -254,10 +253,10 @@ int main(int argc, char *argv[]) {
 	FL_resetFlash();
 	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
 	//Test am Limit
-	mapping_test(ssd, flMe, 200, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(ssd, flMe, 200, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	//Test für BadBlock-Verhalten, Festplatte nicht ganz voll
-	mapping_test(ssd, flMe, 2000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT-5, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	//mapping_test(ssd, flMe, 2000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT-5, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	// Overload Test
 	//load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
