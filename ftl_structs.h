@@ -6,7 +6,7 @@
 #define LOGICAL_BLOCK_DATASIZE 16													
 // Cleaner Konstanten
 // Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
-#define SPARE_BLOCKS 9	
+#define SPARE_BLOCKS 7
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 // Definiert die Größe des neutralen Pools	
 #define THETA 10				
@@ -15,7 +15,7 @@
 // definiert die Größe des save_state
 #define SAVE_STATE_SIZE 3000
 
-#define DEBUG_MESSAGE FALSE
+#define DEBUG_LEVEL 5
 /*	Zustände für die physikalische Liste
 *	empty =  Speicherzelle beschreibbar
 *	assigned =  Speicherzelle benutzt
