@@ -137,7 +137,7 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block)
 	uint16_t page;
 	uint16_t bp_index;
 
-	if(block == -1){
+	if(block == FL_getBlockCount()){
 		return FALSE;
 	}
 
@@ -171,9 +171,14 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
 	uint32_t tempAddress = 0, writePos, p;
 
+	if (flashDevice->blockArray[fromBlock].status == ready){
+		return TRUE;
+	}
 	if (fromBlock == toBlock){
-		printf("Identischer Block! Suche neuen Block!");
-		toBlock = nextBlock(flashDevice, TRUE);
+		if (flashDevice->blockArray[fromBlock].invalidCounter == getBlockSegmentCount()){
+			return TRUE;
+		}
+		toBlock = nextBlock(flashDevice, FALSE);
 		flashDevice->blockArray[fromBlock].status = used;
 	}
 
@@ -186,10 +191,12 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 			if (writeSegmentToBlock(flashDevice, data, toBlock) == FALSE){
 				if (flashDevice->freeBlocks > 0)
 				{
-					toBlock = nextBlock(flashDevice, TRUE);
+					toBlock = nextBlock(flashDevice, FALSE);
 					p--;
 				}
 				else{
+					printf("Warnung! MoveBlock beendet unplanmaessig!");
+					printerr(flashDevice);
 					return FALSE;
 				}
 			}
@@ -320,20 +327,21 @@ uint8_t deleteBlock(flash_t *flashDevice, uint16_t deletedBlock, uint16_t inPool
 	uint16_t spareBlock;
 	uint8_t temp;
 	if (DEBUG_MESSAGE == TRUE) { printf("loesche Block %i\n", deletedBlock); }
-	//Abfrage für badBlock-Verhalten
-	if (flashDevice->freeBlocks == 0){
-		return FALSE;
-	}
-	spareBlock = nextBlock(flashDevice,TRUE);
+	// Sonderfall Block kann direkt gelöscht werden
+		//Abfrage für badBlock-Verhalten
+		if (flashDevice->freeBlocks == 0){
+			return FALSE;
+		}
+		spareBlock = nextBlock(flashDevice, FALSE);
 
-	//Lösche Block
-	// kopiere Inhalt in spareBlock, lösche deletedBlock
-	moveBlock(flashDevice, deletedBlock, spareBlock);
-	temp = cleanBlock(flashDevice, deletedBlock);
-	//falls ein BadBlock entstanden ist
-	if (temp == FALSE){
-		return FALSE;
-	}
+		//Lösche Block
+		// kopiere Inhalt in spareBlock, lösche deletedBlock
+		moveBlock(flashDevice, deletedBlock, spareBlock);
+		temp = cleanBlock(flashDevice, deletedBlock);
+		//falls ein BadBlock entstanden ist
+		if (temp == FALSE){
+			return FALSE;
+		}
 	//Update des Blocks in Pool
 	if (inPool == 1){
 		delBlock(flashDevice->neutralPool, deletedBlock);
@@ -415,7 +423,7 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 						
 		//Average Recalculation Hot
 		recalculationAVG(flashDevice->hotPool);
-		/*
+		
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
 					
@@ -424,7 +432,7 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 			neutralisation(flashDevice, flashDevice->hotPool, deletedBlock, TRUE);		
 			return;
 		}
-		*/
+		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 2);
 	}
@@ -433,14 +441,14 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
-		/*
+		
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
 			//Neutralisation
 			//printf("\nkalte neutralisation Block: %i \n", deletedBlock);
 			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);		
 			return;			
-		}*/
+		}
 		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 3);
@@ -520,8 +528,7 @@ StatusPageElem_t segmentStatus(flash_t *flashDevice, uint16_t block, uint32_t se
 uint8_t garbageCollector(flash_t *flashDevice){	
 	uint16_t i = flashDevice->actWriteBlock, k = 0;		
 	uint8_t temp = TRUE;
-	uint32_t level = flashDevice->invalidCounter / FL_getBlockCount(); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
-	
+	uint32_t level = (flashDevice->invalidCounter / FL_getBlockCount()); //Anzahl der zu bereinigen Blocks, dynamisch berechnet
 	// if (DEBUG_MESSAGE == TRUE) { printf("Garbage Collection\n"); }
 
 	// Verhindern dass Blöcke ohne invalide einträge gecleant werden
@@ -530,12 +537,12 @@ uint8_t garbageCollector(flash_t *flashDevice){
 	}	
 		
 	// Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden				
-	while (flashDevice->freeBlocks <= SPARE_BLOCKS  && k  < FL_getBlockCount ()  ){ 		
-		if( i >= FL_getBlockCount() - 1){
-			i = 0;
+	while (flashDevice->freeBlocks <= SPARE_BLOCKS * 2  && k  < FL_getBlockCount() * 2  ){ 		
+		if( i < FL_getBlockCount()){
+			i++;
 		}
 		else{
-			i++;
+			i = 0;
 		}
 				
 		// Wenn Block über Schwellwert liegt und benutzt wird				
@@ -548,7 +555,7 @@ uint8_t garbageCollector(flash_t *flashDevice){
 		k++;		
 	}
 	//Überprüfe Anzahl freeBlocks
-	checkFreeBlocks(flashDevice);	
+	checkFreeBlocks(flashDevice);
 	if(flashDevice->freeBlocks == 0){
 		return FALSE;
 	}
@@ -599,9 +606,6 @@ uint8_t readBlockIntern(flash_t *flashDevice, uint16_t block, uint16_t page, uin
 		printerr(flashDevice);
 		return FALSE;
 	}
-	if (data[0] != 'A'){
-		printf("Fehler beim Lesen!!");
-	}
 	return TRUE;
 }
 
@@ -611,7 +615,8 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 	uint16_t page = flashDevice->blockArray[block].writePos / FL_getPagesPerBlock();
 	uint16_t bp_index = flashDevice->blockArray[block].writePos % FL_getPagesPerBlock();
 	uint16_t count;
-	uint32_t index_old;
+	uint8_t ret;
+
 
 	if(flashDevice->freeBlocks == 0){
 		return FALSE;
@@ -650,9 +655,11 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		}
 		flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);	
 		// Cleaner		
-		if (flashDevice->freeBlocks <= SPARE_BLOCKS ){
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS + 1){
 			// Clean
-			return garbageCollector(flashDevice); 			
+			ret = garbageCollector(flashDevice); 
+			flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);
+			return ret;
 		}
 	}
 	return TRUE;
@@ -692,9 +699,9 @@ uint16_t nextBlock(flash_t *flashDevice, uint8_t prio){
 	//nehme kältesten, beschreibbaren Block aus hotPool
 	element = findNextBlock(flashDevice, flashDevice->hotPool, (FALSE == prio));
 	if (element != NULL) return element->blockNr;
-	//nehme jetzt einen nichtleeren und nichtvollen Block	
-	printf("Keinen freien Block in Pools gefunden.\n");
-	printerr(flashDevice);
+	//nehme jetzt einen nichtleeren und nichtvollen Block
+		printf("Keinen freien Block in Pools gefunden.\n");
+		printerr(flashDevice);
 	return flashDevice->actWriteBlock; // Aktuellen Schreibblock zurück geben;
 }
 
@@ -730,14 +737,19 @@ flash_t  *mount(flashMem_t *flashHardware){
 		//laden		
 		i = 0;		
 		size = convert8To32(state[i++], state[i++], state[i++], state[i++]);		
-		mappingTableCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);			
-		for (k = 0; k < mappingTableCount; k++){
-			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
-			flashDevice->mappingTable[k] = temp;			
+		mappingTableCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);
+		// Mapping Tabellen mit Null initialisieren
+		for (k = 0; k < getMappingTableSize(); k++){
+			flashDevice->mappingTable[k] = 0;
 		}
 
+		for (k = 0; k < getMappingTableSize(); k++){
+			flashDevice->mappingTableRev[k] = getMappingTableSize();
+		}
 		for (k = 0; k < mappingTableCount; k++){
-			flashDevice->mappingTableRev[k] = getMapT(flashDevice, k / FL_getBlockCount(), k % FL_getBlockCount());
+			temp = convert8To32(state[i++], state[i++], state[i++], state[i++]);
+			//flashDevice->mappingTable[k] = temp;
+			setMapT(flashDevice, k / getBlockSegmentCount(), k % getBlockSegmentCount(), temp);
 		}
 		
 		blockCount = convert8To32(state[i++], state[i++], state[i++], state[i++]);		
@@ -770,7 +782,6 @@ flash_t  *mount(flashMem_t *flashHardware){
 
 		//führe grouping durch
 		grouping(flashDevice);
-		
 	}
 	else{				
 

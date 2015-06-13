@@ -9,7 +9,7 @@
 #include <time.h>
 
 // globale Defines, die die Simulation der Eigenschaften steuern
-#define FL_WEAR_OUT_LIMIT 1000		// Anzahl möglicher Löschzyklen
+#define FL_WEAR_OUT_LIMIT 5000		// Anzahl möglicher Löschzyklen
 #define FL_RANDOM_FAIL_PROBABILITY	10 // Wahrscheinlichkeit (in %), dass ein Block ausfällt, wenn DeleteCount den Schwellwert FL_WEAR_OUT_LIMIT erreicht
 
 // Auswahl der Simulationsmethode für Wear-Out: 
