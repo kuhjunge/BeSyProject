@@ -170,17 +170,17 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block)
 uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
 	uint32_t tempAddress = 0, writePos, p;
-
+	/*
 	if (flashDevice->blockArray[fromBlock].status == ready){
 		return TRUE;
-	}
+	}*//*
 	if (fromBlock == toBlock){
 		if (flashDevice->blockArray[fromBlock].invalidCounter == getBlockSegmentCount()){
 			return TRUE;
 		}
 		toBlock = nextBlock(flashDevice, FALSE);
 		flashDevice->blockArray[fromBlock].status = used;
-	}
+	}*/
 
 	for (p = 0; p < getBlockSegmentCount(); p++){
 		//if (segmentStatus(flashDevice, fromBlock, p) == assigned){
@@ -202,8 +202,7 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 			}
 			else {
 				setMapT(flashDevice, toBlock, writePos, tempAddress);
-			}
-			//Adressupdate																				
+			}			
 		}
 	}
 	if (DEBUG_MESSAGE == TRUE) { printf("Inhalt von Block %i nach %i verschoben\n", fromBlock, toBlock); }
@@ -423,7 +422,7 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 						
 		//Average Recalculation Hot
 		recalculationAVG(flashDevice->hotPool);
-		
+		/*
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter > flashDevice->hotPool->AVG + DELTA){
 					
@@ -431,7 +430,7 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 			//printf("\nwarme neutralisation \n");
 			neutralisation(flashDevice, flashDevice->hotPool, deletedBlock, TRUE);		
 			return;
-		}
+		}*/
 		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 2);
@@ -441,14 +440,14 @@ uint8_t wearLeveling(flash_t *flashDevice, uint16_t deletedBlock){
 				
 		//Average Recalculation Cold
 		recalculationAVG(flashDevice->coldPool);
-		
+		/*
 		//check condition 3
 		if (flashDevice->blockArray[deletedBlock].deleteCounter < flashDevice->coldPool->AVG - DELTA){
 			//Neutralisation
 			//printf("\nkalte neutralisation Block: %i \n", deletedBlock);
 			neutralisation(flashDevice, flashDevice->coldPool, deletedBlock, FALSE);		
 			return;			
-		}
+		}*/
 		
 		//lösche deletedBlock		
 		deleteBlock(flashDevice, deletedBlock, 3);
@@ -537,7 +536,7 @@ uint8_t garbageCollector(flash_t *flashDevice){
 	}	
 		
 	// Solange noch nicht alle Bloecke durchlaufen wurden oder genug Bloecke gereinigt wurden				
-	while (flashDevice->freeBlocks <= SPARE_BLOCKS * 2  && k  < FL_getBlockCount() * 2  ){ 		
+	while (flashDevice->freeBlocks < SPARE_BLOCKS   && k  < FL_getBlockCount()   ){ 		
 		if( i < FL_getBlockCount()){
 			i++;
 		}
@@ -655,10 +654,10 @@ uint8_t writeBlockIntern(flash_t *flashDevice, uint32_t index, uint8_t *data){
 		}
 		flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);	
 		// Cleaner		
-		if (flashDevice->freeBlocks <= SPARE_BLOCKS + 1){
+		if (flashDevice->freeBlocks <= SPARE_BLOCKS ){
 			// Clean
 			ret = garbageCollector(flashDevice); 
-			flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);
+			//flashDevice->actWriteBlock = nextBlock(flashDevice, FALSE);
 			return ret;
 		}
 	}

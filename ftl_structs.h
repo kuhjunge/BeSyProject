@@ -6,7 +6,7 @@
 #define LOGICAL_BLOCK_DATASIZE 16													
 // Cleaner Konstanten
 // Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
-#define SPARE_BLOCKS 9	
+#define SPARE_BLOCKS 2	
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 // Definiert die Größe des neutralen Pools	
 #define THETA 10				
