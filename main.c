@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
 
 	FL_resetFlash();	
 	//schreibe erst einen Block wiederholt; unmount, mount und überprüfe den Inhalt dieses Blocks, danach wieder schreiben und überprüfen
-	mountmapping_test(ssd, flMe, 4, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mountmapping_test(ssd, flMe, 3, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	//schreibe ein Segment, unmount, mounte und überprüfe, ob Segment richtig gelesen wurde
 	//mount_test(ssd, flMe, LOGICAL_BLOCK_DATASIZE);
