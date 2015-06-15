@@ -114,6 +114,8 @@ void mountmapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, u
 				}
 				// Zyklus Schleife unterbrechen
 				multiplikator = 0;
+				printf("Fataler Lesefehler");
+				printerr(ssd);
 			}
 			if (showPoints != 0) {
 				printf(".");
@@ -336,7 +338,7 @@ int main(int argc, char *argv[]) {
 //	simple_mapping_test(ssd, flMe, 4000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	FL_resetFlash();
 	//Test für BadBlock-Verhalten, Festplatte nicht ganz voll
-	mapping_test(ssd, flMe, 500, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment, 0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	mapping_test(ssd, flMe, 2500, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment, 0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	FL_resetFlash();
 	// Overload Test
 	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
