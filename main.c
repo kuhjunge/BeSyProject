@@ -233,7 +233,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 		writeData(ssd, blocksegment, ((blockcount - spare) * blocksegment) - blocksegment, 1, blockcount * blocksegment,showPoints); // Speicher vorbeschreiben	
 		for (i = blocksegment; i <= checki; i++){
 			for (j = 0; j < logicalsize; j++){
-				checkvalue = (uint8_t)(((i * j)  +k) % 255);
+				checkvalue = (uint8_t)((i + j  + k) % 254);
 				myData[j] = checkvalue;
 				//printf("%c", checkvalue); 
 			}
@@ -241,6 +241,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 				if (i > 0){
 					// Schreibs und Leseschleife unterbrechen
 					checki = i -1; 
+					printerr(ssd);
 				}
 				else{
 					i = 0;
@@ -256,7 +257,7 @@ void mapping_test(flash_t* ssd, flashMem_t* flMe, uint32_t multiplikator, uint32
 		for (i = blocksegment; i <= checki; i++){
 			readBlock(ssd, i, myRetData);
 			for (j = 0; j < logicalsize; j++){
-				checkvalue = (uint8_t)(((i * j) + k) % 255);
+				checkvalue = (uint8_t)((i + j + k) % 254);
 				if (myRetData[j] != checkvalue){
 					printf("Mappingfehler an Adresse %i -> %c (%i) != %c (%i)\n", i, myRetData[j], myRetData[j], checkvalue, checkvalue);
 					printLogicalToHW(ssd, i);
@@ -331,7 +332,6 @@ int main(int argc, char *argv[]) {
 	//load_test(ssd, flMe, 5000, 480, 1);
 	
 	FL_resetFlash();
-	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
 	//Test am Limit
 //	simple_mapping_test(ssd, flMe, 4000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	FL_resetFlash();
