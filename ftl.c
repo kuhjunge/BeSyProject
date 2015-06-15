@@ -169,7 +169,7 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block)
 
 uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
-	uint32_t tempAddress = 0, writePos, p;
+	uint32_t tempAddress = 0, writePos, p = 0;
 	/*
 	if (flashDevice->blockArray[fromBlock].status == ready){
 		return TRUE;
@@ -203,7 +203,6 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 			}			
 		}		
 		p++;
-	}
 	}
 	if (DEBUG_LEVEL < 3) { printf("Inhalt von Block %i nach %i verschoben\n", fromBlock, toBlock); }
 	return TRUE;
