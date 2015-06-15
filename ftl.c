@@ -169,7 +169,7 @@ uint8_t writeSegmentToBlock(flash_t *flashDevice, uint8_t* data, uint16_t block)
 
 uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 	uint8_t data[LOGICAL_BLOCK_DATASIZE];
-	uint32_t tempAddress = 0, writePos, p;
+	uint32_t tempAddress = 0, writePos, p = 0;
 	/*
 	if (flashDevice->blockArray[fromBlock].status == ready){
 		return TRUE;
@@ -181,11 +181,8 @@ uint8_t moveBlock(flash_t* flashDevice, uint16_t fromBlock, uint16_t toBlock){
 		toBlock = nextBlock(flashDevice, FALSE);
 		flashDevice->blockArray[fromBlock].status = used;
 	}*/
-
-	p = 0;
 	while (p < getBlockSegmentCount()){		
 		if (segmentStatus(flashDevice, fromBlock, p) == assigned){
-		//if (mapping(flashDevice, getMapT(flashDevice, fromBlock, p)) != getMappingTableSize()){
 			tempAddress = getMapT(flashDevice, fromBlock, p);
 			readBlockIntern(flashDevice, fromBlock, (uint16_t)p / FL_getPagesPerBlock(), (uint16_t)p % FL_getPagesPerBlock(), data);
 			writePos = flashDevice->blockArray[toBlock].writePos;
@@ -274,7 +271,7 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint16_t deletedBlock, u
 				blockNr = showFirstElement(flashDevice->neutralPool)->blockNr;
 			}			
 
-			for (i = 0; i < flashDevice->blockArray[spareBlock].writePos; i++){
+			/*for (i = 0; i < flashDevice->blockArray[spareBlock].writePos; i++){
 				//printf("Tausche Block %i mit [%i]\n", spareBlock, blockNr);
 				do {
 					tempAddress = getMapT(flashDevice, spareBlock, i);
@@ -294,7 +291,8 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint16_t deletedBlock, u
 						setMapT(flashDevice, blockNr, writePos, tempAddress);
 					}
 				} while (p == FALSE);
-			}
+			}*/
+			moveBlock(flashDevice,spareBlock , blockNr);
 			
 			//lösche den verwendeten SpareBlock
 			cleanBlock(flashDevice, spareBlock);

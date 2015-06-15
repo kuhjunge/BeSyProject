@@ -6,14 +6,14 @@
 #define LOGICAL_BLOCK_DATASIZE 16													
 // Cleaner Konstanten
 // Anzahl der Reserve Blocks, die für Kopiervorgänge gebraucht werden 
-#define SPARE_BLOCKS 3	
+#define SPARE_BLOCKS 7	
 // Wear-Leveler ([TC11]- Algorithmus) Konstanten
 // Definiert die Größe des neutralen Pools	
 #define THETA 10				
 // Definiert den Bereich für BlockNeutralisationen
 #define DELTA 5	
 // definiert die Größe des save_state
-#define SAVE_STATE_SIZE 3000
+#define SAVE_STATE_SIZE 6 * 512
 
 #define DEBUG_MESSAGE FALSE
 /*	Zustände für die physikalische Liste
