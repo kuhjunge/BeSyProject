@@ -229,7 +229,7 @@ void neutralisation(flash_t *flashDevice, List_t *pool, uint16_t deletedBlock, u
 			
 		//step 2 lösche Block und setze Zähler hoch
 			cleanBlock(flashDevice, deletedBlock);			
-			return;
+			
 			//Fehlerfall, es sind keine Elemente mehr im neutralPool [Workaround]
 			if (flashDevice->neutralPool->blockCounter < 1){
 				if (flashDevice->coldPool->blockCounter < 1){
