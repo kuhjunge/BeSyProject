@@ -305,7 +305,7 @@ void mount_test(flash_t* ssd, flashMem_t* flMe, uint8_t logicalsize){
 		}	
 	}
 	printf("Unmount\n");
-	//printerr(ssd); // Debug Ausgabe der Datenstruktur!
+	printerr(ssd); // Debug Ausgabe der Datenstruktur!
 	ssd = unmount(ssd);
 	printf("Mounttest erfolgreich\n");
 }
@@ -322,7 +322,7 @@ int main(int argc, char *argv[]) {
 	//mountmapping_test(ssd, flMe, 3, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
 	
 	//schreibe ein Segment, unmount, mounte und überprüfe, ob Segment richtig gelesen wurde
-	//mount_test(ssd, flMe, LOGICAL_BLOCK_DATASIZE);
+	mount_test(ssd, flMe, LOGICAL_BLOCK_DATASIZE);
 
 	//FL_resetFlash();
 	// Wenige Random Datensätze die kreuz und quer geschrieben werden (Testet Block Verteilung bei wenig geschriebenen Datensätzen)
@@ -333,11 +333,11 @@ int main(int argc, char *argv[]) {
 	FL_resetFlash();
 	//mapping_test(ssd, flMe, 25, 16, 2, 32, 16);
 	//Test am Limit
-	//simple_mapping_test(ssd, flMe, 4000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
-	
+	simple_mapping_test(ssd, flMe, 4000, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment,0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	FL_resetFlash();
 	//Test für BadBlock-Verhalten, Festplatte nicht ganz voll
-	mapping_test(ssd, flMe, 100, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment, 1); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
-	
+	mapping_test(ssd, flMe, 500, LOGICAL_BLOCK_DATASIZE, SPARE_BLOCKS, BLOCK_COUNT, blocksegment, 0); // Prüft das Mapping auf Richtigkeit  (Testbeispiel für [TC11] Algorithmus)
+	FL_resetFlash();
 	// Overload Test
-	//load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
+	load_test(ssd, flMe,481,481,0 ); // Was passiert, wenn die Festplatte zu voll geschrieben wird ?
 }
