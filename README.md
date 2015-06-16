@@ -2,13 +2,13 @@
 
 ##Schritt 1 - Öffnen des Projektes##
 
-Nachdem die *.zip Datei entpackt wurde befindet sich im Ordner “FTL Implementation” das Programm. 
+Nachdem die *.zip Datei entpackt wurde befindet sich im Ordner _“FTL Implementation”_ das Programm. 
 Um das Programm in Visual Studio 2010 zu öffnen, starten Sie als erstes Visual Studio 2010.
-Unter Datei - Öffnen - Projekt öffnen wählen Sie im Ordner “FTL Implementation” die Datei “flash.sln”.
+Unter Datei - Öffnen - Projekt öffnen wählen Sie im Ordner _“FTL Implementation”_ die Datei _“flash.sln”_.
 
 ##Schritt 2 - Konfiguration der Parameter##
 
-Anschließend gehen Sie auf den Projektmappen-Explorer von Visual Studio und öffnen unter Headerdateien die Datei ftl_structs.h.
+Anschließend gehen Sie auf den Projektmappen-Explorer von Visual Studio und öffnen unter Headerdateien die Datei __ftl_structs.h__.
 Alle Parameter mit dem unser FTL arbeitet wurden in der ftl_structs.h parametrisiert.
 Folgende Parameter sind dort hinterlegt:
 
@@ -24,24 +24,24 @@ Folgende Parameter sind dort hinterlegt:
 
 ##Schritt 3 - Starten eines Tests##
 
-Im Projektmappen-Explorer findet man unter den Quelldateien die “main.c”. Dort sind bereits einige Testfälle konfiguriert. Diese kann man nach belieben ein und auskommentieren. Anschließend kann man testen ob das Projekt ordnungsmäßig funktioniert.
+Im Projektmappen-Explorer findet man unter den Quelldateien die __“main.c”__. Dort sind bereits einige Testfälle konfiguriert. Diese kann man nach belieben ein und auskommentieren. Anschließend kann man testen ob das Projekt ordnungsmäßig funktioniert.
 
 ##Schritt 4 - Nutzen des FTL in einem eigenen Projekt##
 
 ###Lesezugriff###
-Findet über die Funktion uint8_t readBlock (flash_t *flashDevice, uint32_t index, uint8_t *data) statt.
+Findet über die Funktion __uint8_t readBlock (flash_t *flashDevice, uint32_t index, uint8_t *data)__ statt.
 Liest einen Datenblock an der angegebene Indexposition vom Flashspeicher, der mit der in flashDevice übergebenen Datenstruktur verwaltet wird. flashDevice zeigt auf die Datenstruktur vom Typ flash_t, die zur Verwaltung dieses Flash-Datenträgers dient. index ist die Nummer des zu lesenden Blocks. data ist ein Pointer auf einen ausreichend großen Datenbereich, in den die zu lesenden Daten kopiert werden. Der Rückgabewert ist als Boolescher Wert zu interpretieren.
 
 ###Schreibzugriff###
-Findet über die Funktion uint8_t writeBlock (flash_t *flashDevice, uint32_t index, uint8_t *data) statt.
+Findet über die Funktion __uint8_t writeBlock (flash_t *flashDevice, uint32_t index, uint8_t *data)__ statt.
 Schreibt einen Datenblock an der angegebene Indexposition auf den Flashspeicher, der mit der in flashDevice übergebenen Datenstruktur verwaltet wird. flashDevice zeigt auf die Datenstruktur vom Typ flash_t, die zur Verwaltung dieses Flash-Datenträgers dient. index ist die Nummer des zu schreibenden Blocks auf dem Flashdevice data ist ein Pointer auf den Quelldatenblock. Der Rückgabewert ist als Boolescher Wert zu interpretieren.
 
 ###Mount###
-Findet üer die Funktion flash_t *mount (flashMem_t *flashHardware) statt.
+Findet üer die Funktion __flash_t *mount (flashMem_t *flashHardware)__ statt.
 Mounten des Flash-Datenträgers. Dabei sollen die Datenstrukturen des FTL aus dem im Flash abgelegten Zustand erzeugt werden. Nach dem Mounten ist der Datenträger bereit zur Verwendung. flashHardware zeigt auf die Datenstruktur vom Typ flashMem_t, die den FlashDatenträger modelliert. Der Rückgabewert ist ein Pointer auf eine von Ihnen definierte Datenstruktur mit Typnamen flash_t, die bei weiteren Funktionen dieses Interfaces als Parameter übergeben.
 
 ###Unmount###
-Findet über die Funktion  flash_t *unmount (flash_t *flashDevice) statt.
+Findet über die Funktion  __flash_t *unmount (flash_t *flashDevice)__ statt.
 Unmounten des Flash-Datenträgers. Dabei sollen die Datenstrukturen des FTL in der Repräsentation als Byte-Array auf dem Flash abgelegt werden. Nach dem Unmounten ist eine weitere Verwendung des Datenträgers erst nach erneutem Mounten möglich. flashDevice zeigt auf die Datenstruktur vom Typ flash_t, die zur Verwaltung dieses Flash-Datenträgers dient. Der Rückgabewert ist ein Pointer auf eine Datenstruktur vom Typ flash_t. Im Erfolgsfall wird NULL zurückgegeben, bei einem Fehler kann die Information des Fehlerfalls in der Datenstruktur abgelegt sein. 
 
->by Chris Deter () & Simon Krause
+>by Chris Deter (238733) & Simon Krause (187198)
